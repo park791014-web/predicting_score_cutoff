@@ -1,0 +1,862 @@
+
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>분할점수 산출컷 예측기</title>
+  <style>
+    :root{
+      --bg:#f5f7fb; --card:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+      --primary:#2458d3; --primary2:#eaf1ff; --danger:#dc2626; --ok:#047857;
+      --a:#ffe1e7; --b:#fff0cf; --c:#e8f7dc; --d:#e9e4f5; --e:#f1f5f9;
+      --a-strong:#d72655; --b-strong:#bd7400; --c-strong:#2f7d32; --d-strong:#6d4aa3; --e-strong:#475569;
+      --shadow:0 14px 34px rgba(31,41,55,.10);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;}
+    .wrap{max-width:1380px;margin:0 auto;padding:28px 22px 54px;}
+    .hero{display:flex;gap:18px;align-items:flex-end;justify-content:space-between;margin-bottom:18px;}
+    h1{font-size:30px;margin:0 0 8px;letter-spacing:-.04em;}
+    .sub{margin:0;color:var(--muted);line-height:1.55;font-size:15px;}
+    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap;}
+    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:start;}
+    @media(max-width:1050px){.grid{grid-template-columns:1fr}.hero{display:block}.pill{margin-top:12px}}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+    .card-h{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(255,255,255,.78);}
+    .card-h h2{font-size:18px;margin:0;letter-spacing:-.03em;}
+    .card-b{padding:18px;}
+    .paste-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+    .paste-box{border:1px solid var(--line);border-radius:15px;overflow:hidden;background:#fbfdff;}
+    .paste-title{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);background:#f8fafc;font-weight:800;}
+    .small{font-size:12px;color:var(--muted);font-weight:600;}
+    textarea{width:100%;min-height:90px;display:block;border:0;outline:0;resize:vertical;padding:12px 13px;font-family:"D2Coding","Consolas",monospace;font-size:12px;line-height:1.42;background:white;color:#111827;}
+    textarea::placeholder{color:#9ca3af;}
+    .btns{display:flex;flex-wrap:wrap;gap:9px;align-items:center;}
+    button{appearance:none;border:0;border-radius:12px;background:var(--primary);color:white;padding:10px 14px;font-weight:800;cursor:pointer;box-shadow:0 5px 12px rgba(36,88,211,.18);}
+    button:hover{filter:brightness(.98);transform:translateY(-1px)}
+    button.secondary{background:#f3f4f6;color:#111827;box-shadow:none;border:1px solid var(--line);}
+    button.ghost{background:white;color:#374151;box-shadow:none;border:1px solid var(--line);padding:7px 10px;border-radius:10px;font-size:12px;}
+    button.warn{background:#fee2e2;color:#991b1b;box-shadow:none;border:1px solid #fecaca;}
+    .settings{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    @media(max-width:680px){.settings{grid-template-columns:1fr}}
+    .section{border:1px solid var(--line);border-radius:15px;background:#fbfdff;padding:14px;}
+    .section h3{margin:0 0 10px;font-size:15px;letter-spacing:-.02em;}
+    .input-grid{display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:10px;}
+    .input-grid.cols4{grid-template-columns:repeat(4, minmax(0,1fr));}
+    label{display:block;font-size:12px;color:#4b5563;font-weight:800;margin-bottom:5px;}
+    input[type="number"]{width:100%;border:1px solid #d1d5db;border-radius:11px;padding:10px 10px;background:white;font-size:14px;outline:none;}
+    input[type="number"]:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(59,130,246,.14)}
+    input[type="range"]{width:100%;accent-color:var(--primary);}
+    .notice{border:1px solid #bfdbfe;background:#eff6ff;color:#1e40af;border-radius:14px;padding:12px 13px;font-size:13px;line-height:1.45;margin-top:12px;}
+    .notice.bad{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
+    .notice.ok{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
+    .notice.missing{background:#ffedd5;border-color:#fb923c;color:#9a3412;font-weight:800;box-shadow:0 6px 14px rgba(251,146,60,.16)}
+    .summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:18px 0;}
+    @media(max-width:1050px){.summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .kpi{background:white;border:1px solid var(--line);border-radius:15px;padding:13px;box-shadow:0 8px 18px rgba(31,41,55,.05);}
+    .kpi .t{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:7px;}
+    .kpi .v{font-size:23px;font-weight:900;letter-spacing:-.03em;}
+    .grade-chip{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:25px;border-radius:999px;font-weight:900;font-size:13px;border:1px solid rgba(0,0,0,.08)}
+    .gA{background:var(--a);color:var(--a-strong)} .gB{background:var(--b);color:var(--b-strong)} .gC{background:var(--c);color:var(--c-strong)} .gD{background:var(--d);color:var(--d-strong)} .gE{background:var(--e);color:var(--e-strong)}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:15px;background:white;max-height:620px;}
+    table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;}
+    thead th{position:sticky;top:0;z-index:1;background:#111827;color:white;text-align:center;font-size:12px;padding:10px 8px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.12)}
+    tbody td{padding:8px 8px;border-bottom:1px solid #edf0f5;text-align:center;white-space:nowrap;}
+    tbody tr:hover{outline:2px solid rgba(36,88,211,.22);outline-offset:-2px;}
+    tr.rowA td{background:var(--a)} tr.rowB td{background:var(--b)} tr.rowC td{background:var(--c)} tr.rowD td{background:var(--d)} tr.rowE td{background:#fff}
+    .cut-table tbody td:first-child{font-weight:900;text-align:left;}
+    .scenario-wrap{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;margin-top:18px;}
+    @media(max-width:980px){.scenario-wrap{grid-template-columns:1fr}}
+    .footnote{font-size:12px;color:var(--muted);line-height:1.55;margin:10px 0 0;}
+    .right-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+
+    .security-box{border:1px solid #bfdbfe;background:rgba(239,246,255,.92);color:#1e3a8a;border-radius:18px;padding:14px 16px;margin:0 0 18px;box-shadow:0 10px 24px rgba(31,41,55,.08);line-height:1.55;font-size:14px;}
+    .security-box b{color:#1d4ed8}
+    .security-box ul{margin:8px 0 0 18px;padding:0;}
+    .security-box li{margin:3px 0;}
+    .hide{display:none!important;}
+    .paste-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+    .upload-label{display:inline-flex;align-items:center;cursor:pointer;border:1px solid var(--line);border-radius:10px;padding:5px 9px;font-size:11px;font-weight:700;background:white;color:#374151;gap:3px;line-height:1;}
+    .upload-label:hover{background:#f3f4f6;}
+    button.del-sm{background:#fff5f5;color:#991b1b;box-shadow:none;border:1px solid #fecaca;border-radius:10px;padding:5px 9px;font-size:11px;}
+    button.del-sm:hover{background:#fee2e2;}
+    @keyframes gradShift{
+      0%{background-position:0% 50%}
+      50%{background-position:100% 50%}
+      100%{background-position:0% 50%}
+    }
+    body{background:linear-gradient(-45deg,#dfe8fe,#ebe5fd,#dff7ee,#dfeefe,#fee5f4,#fef6e0);background-size:600% 600%;animation:gradShift 7s ease infinite;}
+    #bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+    .wrap{position:relative;z-index:1;}
+  </style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <h1>분할점수 산출컷 예측기</h1>
+      <p class="sub">엑셀에서 <b>가로=반, 세로=번호</b> 형태로 복사해 붙여넣으면 학생별 예상 총점과 A/B/C/D/E 구간을 자동으로 정렬·색칠합니다.<br>입력 점수는 <b>100점 만점 기준 원점수</b>를 권장하며, 2차지필은 <b>1차지필 + 난이도 보정</b> 방식으로 예측합니다.</p>
+    </div>
+    <div class="pill">📊 첨부 엑셀 ‘산출총점_예상’ 구조 반영</div>
+  </div>
+
+  <div class="security-box">
+    <b>🔒 개인정보 보호 안내</b>
+    <ul>
+      <li>성적 자료는 이 화면에서만 계산되며 외부로 전송되지 않습니다.</li>
+      <li>선택한 엑셀 파일은 사용자의 브라우저에서만 읽습니다.</li>
+      <li>공용 PC 사용 후에는 전체 초기화를 누르거나 창을 닫아 주세요.</li>
+      <li>CSV로 내려받은 결과 파일은 학교 보안 저장소에 보관해 주세요.</li>
+    </ul>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-h">
+        <h2>1. 성적 입력하기</h2>
+        <div class="btns">
+          <button class="ghost" id="clearTextBtn">입력칸 전체 비우기</button>
+          <button class="warn" id="fullResetBtn">전체 초기화</button>
+        </div>
+      </div>
+      <div class="card-b">
+        <div class="paste-grid">
+          <div class="paste-box">
+            <div class="paste-title">
+              <span>1차지필</span>
+              <div class="paste-actions">
+                <label class="upload-label" for="fileExam1">📂 엑셀 업로드</label>
+                <input type="file" id="fileExam1" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileUpload(this,'exam1Text','statusExam1')">
+                <button class="del-sm" onclick="clearSingleInput('exam1Text','statusExam1')">삭제</button>
+                <span class="small" id="statusExam1">대기</span>
+              </div>
+            </div>
+            <textarea id="exam1Text" placeholder="번호&#9;1반&#9;2반&#9;3반 ...&#10;1&#9;51.8&#9;13.1&#9;27.1 ..."></textarea>
+          </div>
+          <div class="paste-box">
+            <div class="paste-title">
+              <span>1차서술/1차수행</span>
+              <div class="paste-actions">
+                <label class="upload-label" for="fileWriting1">📂 엑셀 업로드</label>
+                <input type="file" id="fileWriting1" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileUpload(this,'writing1Text','statusWriting1')">
+                <button class="del-sm" onclick="clearSingleInput('writing1Text','statusWriting1')">삭제</button>
+                <span class="small" id="statusWriting1">대기</span>
+              </div>
+            </div>
+            <textarea id="writing1Text" placeholder="번호&#9;1반&#9;2반&#9;3반 ...&#10;1&#9;88&#9;80&#9;92 ..."></textarea>
+          </div>
+          <div class="paste-box">
+            <div class="paste-title">
+              <span>2차서술/2차수행</span>
+              <div class="paste-actions">
+                <label class="upload-label" for="fileWriting2">📂 엑셀 업로드</label>
+                <input type="file" id="fileWriting2" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileUpload(this,'writing2Text','statusWriting2')">
+                <button class="del-sm" onclick="clearSingleInput('writing2Text','statusWriting2')">삭제</button>
+                <span class="small" id="statusWriting2">대기</span>
+              </div>
+            </div>
+            <textarea id="writing2Text" placeholder="번호&#9;1반&#9;2반&#9;3반 ...&#10;1&#9;92&#9;92&#9;90 ..."></textarea>
+          </div>
+        </div>
+        <p class="footnote">엑셀에서 표 범위를 잡아 Ctrl+C → 이 칸에 Ctrl+V 하거나, 엑셀 업로드 버튼으로 파일을 선택하면 됩니다. 파일은 서버에 업로드되지 않고 브라우저에서만 읽습니다. 맨 윗줄에 ‘번호, 1반, 2반…’이 있으면 가장 안정적으로 인식합니다.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <h2>2. 성취비율·반영비율·난이도</h2>
+        <div class="right-actions">
+          <button id="calcBtn">계산하기</button>
+          <button class="secondary" id="exportBtn">CSV 내보내기</button>
+        </div>
+      </div>
+      <div class="card-b">
+        <div class="settings">
+          <div class="section">
+            <h3>성취비율: 개별 비율 입력</h3>
+            <div class="input-grid cols4">
+              <div><label>A (%)</label><input type="number" id="pctA" value="20" min="0" max="100" step="0.1"></div>
+              <div><label>B (%)</label><input type="number" id="pctB" value="30" min="0" max="100" step="0.1"></div>
+              <div><label>C (%)</label><input type="number" id="pctC" value="30" min="0" max="100" step="0.1"></div>
+              <div><label>D (%)</label><input type="number" id="pctD" value="15" min="0" max="100" step="0.1"></div>
+            </div>
+            <p class="footnote">예: A 20, B 30, C 30, D 15 → 누적 20%, 50%, 80%, 95%, 100%</p>
+          </div>
+          <div class="section">
+            <h3>반영비율</h3>
+            <div class="input-grid cols4">
+              <div><label>1차지필</label><input type="number" id="wExam1" value="30" step="0.1"></div>
+              <div><label>2차지필</label><input type="number" id="wExam2" value="30" step="0.1"></div>
+              <div><label>1차서술</label><input type="number" id="wWriting1" value="20" step="0.1"></div>
+              <div><label>2차서술</label><input type="number" id="wWriting2" value="20" step="0.1"></div>
+            </div>
+            <p class="footnote">기본값은 첨부파일처럼 30:30:20:20입니다.</p>
+          </div>
+          <div class="section">
+            <h3>2차지필 난이도 보정</h3>
+            <div class="input-grid">
+              <div><label>보정점수 (+/−)</label><input type="number" id="deltaExam2" value="0" step="0.1"></div>
+              <div><label>현재 예측식</label><input type="number" id="dummy" value="0" disabled style="display:none"><div class="notice ok" style="margin:0;padding:9px 11px;">2차지필 = 1차지필 + 보정점수</div></div>
+            </div>
+            <input type="range" id="deltaRange" min="-30" max="30" step="1" value="0" aria-label="2차지필 보정 슬라이더">
+            <p class="footnote">예: -5는 2차지필이 1차지필보다 평균적으로 5점 어렵다고 보는 설정입니다.</p>
+          </div>
+          <div class="section">
+            <h3>계산 기준</h3>
+            <div id="calcInfo" class="notice">아직 계산 전입니다. 엑셀 자료를 붙여넣거나 파일을 선택해 주세요.</div>
+            <div id="missingInfo" class="notice missing hide"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary" id="summaryCards"></div>
+
+  <div class="scenario-wrap">
+    <div class="card">
+      <div class="card-h"><h2>3. 경계별 산출컷 예상</h2></div>
+      <div class="card-b">
+        <div class="table-wrap" style="max-height:none;">
+          <table class="cut-table" id="cutTable">
+            <thead><tr><th>경계</th><th>누적 인원</th><th>1차지필</th><th>2차지필 예상</th><th>1차서술</th><th>2차서술</th><th>총점컷</th><th>중간컷</th></tr></thead>
+            <tbody><tr><td colspan="8">자료를 넣고 계산해 주세요.</td></tr></tbody>
+          </table>
+        </div>
+        <p class="footnote">총점컷은 해당 등급에 포함되는 마지막 학생의 총점입니다. 중간컷은 그 학생과 바로 다음 학생의 평균으로, 실제 분할점수 설정 시 참고용입니다. 실제 나이스 합산, 소수점 처리, 동점자 처리 기준은 학교 학업성적관리규정에 따라 달라질 수 있습니다.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h2>4. 난이도 시나리오</h2></div>
+      <div class="card-b">
+        <div class="table-wrap" style="max-height:none;">
+          <table id="scenarioTable">
+            <thead><tr><th>2차지필 보정</th><th>A컷</th><th>B컷</th><th>C컷</th><th>D컷</th><th>평균</th></tr></thead>
+            <tbody><tr><td colspan="6">자료를 넣고 계산해 주세요.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;">
+    <div class="card-h">
+      <h2>5. 학생별 예상 총점 정렬표</h2>
+      <div class="small" id="rowCountInfo">0명</div>
+    </div>
+    <div class="card-b">
+      <div class="table-wrap">
+        <table id="studentTable">
+          <thead><tr><th>석차</th><th>성취</th><th>반</th><th>번호</th><th>1차지필</th><th>2차지필 예상</th><th>1차서술</th><th>2차서술</th><th>예상 총점</th></tr></thead>
+          <tbody><tr><td colspan="9">엑셀 자료를 붙여넣거나 파일을 선택해 주세요.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="./xlsx.full.min.js"></script>
+<script>
+// ── 배경 애니메이션 ─────────────────────────────────────────────────────
+(function(){
+  const canvas=document.getElementById('bgCanvas');
+  const ctx=canvas.getContext('2d');
+  let W,H;
+
+  const PALETTE=[
+    [36,88,211],[99,102,241],[139,92,246],
+    [59,130,246],[16,185,129],[245,158,11],
+    [236,72,153],[20,184,166]
+  ];
+
+  const SYMBOLS=[
+    '∑','∫','√','π','Δ','∞','±','∂','∇','α','β','γ','θ','λ','μ','σ','φ','ω','ε','ρ',
+    'E=mc²','F=ma','a²+b²=c²','y=ax+b','P(A|B)','lim','dy/dx','e^iπ=-1',
+    '∑(xᵢ)/n','σ²','∫f(x)dx','∇²ψ','Δx→0','log₂n','n!','⌀','∈','∉','⊂','∀','∃',
+    'H₂O','CO₂','E=hν','pV=nRT','v=λf','sin²θ+cos²θ=1'
+  ];
+
+  class Orb{
+    constructor(){this.reset(true);}
+    reset(init){
+      this.x=Math.random()*W;
+      this.y=init?Math.random()*H:(Math.random()<.5?-200:H+200);
+      this.r=Math.random()*200+100;
+      this.vx=(Math.random()-.5)*.9;
+      this.vy=(Math.random()-.5)*.9;
+      this.alpha=Math.random()*.15+.08;
+      this.rgb=PALETTE[Math.floor(Math.random()*PALETTE.length)];
+      this.phase=Math.random()*Math.PI*2;
+      this.wfreq=Math.random()*.008+.003;
+      this.wamp=Math.random()*2.5+1;
+    }
+    update(t){
+      this.x+=this.vx+Math.sin(t*this.wfreq+this.phase)*this.wamp;
+      this.y+=this.vy+Math.cos(t*this.wfreq+this.phase*1.3)*this.wamp*.7;
+      if(this.x<-this.r*2||this.x>W+this.r*2||this.y<-this.r*2||this.y>H+this.r*2) this.reset(false);
+    }
+    draw(){
+      const g=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.r);
+      const [r,gv,b]=this.rgb;
+      g.addColorStop(0,`rgba(${r},${gv},${b},${this.alpha})`);
+      g.addColorStop(.5,`rgba(${r},${gv},${b},${this.alpha*.4})`);
+      g.addColorStop(1,`rgba(${r},${gv},${b},0)`);
+      ctx.beginPath();
+      ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+      ctx.fillStyle=g;
+      ctx.fill();
+    }
+  }
+
+  class FloatSymbol{
+    constructor(){this.reset(true);}
+    reset(init){
+      this.x=Math.random()*W;
+      this.y=init?Math.random()*H:(Math.random()<.5?-60:H+60);
+      this.text=SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
+      this.size=Math.random()*22+13;
+      this.vx=(Math.random()-.5)*.7;
+      this.vy=-(Math.random()*.6+.2);
+      this.alpha=Math.random()*.35+.15;
+      this.rot=(Math.random()-.5)*.6;
+      this.vrot=(Math.random()-.5)*.012;
+      this.rgb=PALETTE[Math.floor(Math.random()*PALETTE.length)];
+    }
+    update(){
+      this.x+=this.vx;
+      this.y+=this.vy;
+      this.rot+=this.vrot;
+      if(this.x<-150||this.x>W+150||this.y<-150||this.y>H+150) this.reset(false);
+    }
+    draw(){
+      const [r,gv,b]=this.rgb;
+      ctx.save();
+      ctx.translate(this.x,this.y);
+      ctx.rotate(this.rot);
+      ctx.font=`bold ${this.size}px "Apple SD Gothic Neo","Noto Sans KR","Segoe UI",serif`;
+      ctx.fillStyle=`rgba(${r},${gv},${b},${this.alpha})`;
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(this.text,0,0);
+      ctx.restore();
+    }
+  }
+
+  let orbs=[], symbols=[], t=0;
+  function resize(){
+    W=canvas.width=window.innerWidth;
+    H=canvas.height=window.innerHeight;
+  }
+  function init(){
+    resize();
+    orbs=Array.from({length:16},()=>new Orb());
+    symbols=Array.from({length:35},()=>new FloatSymbol());
+  }
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    t++;
+    orbs.forEach(o=>{o.update(t);o.draw();});
+    symbols.forEach(s=>{s.update();s.draw();});
+    requestAnimationFrame(loop);
+  }
+  window.addEventListener('resize',resize);
+  init();
+  loop();
+})();
+</script>
+<script>
+const $ = (id) => document.getElementById(id);
+const els = {
+  exam1Text: $('exam1Text'), writing1Text: $('writing1Text'), writing2Text: $('writing2Text'),
+  pctA: $('pctA'), pctB: $('pctB'), pctC: $('pctC'), pctD: $('pctD'),
+  wExam1: $('wExam1'), wExam2: $('wExam2'), wWriting1: $('wWriting1'), wWriting2: $('wWriting2'),
+  deltaExam2: $('deltaExam2'), deltaRange: $('deltaRange'), calcInfo: $('calcInfo'),
+  summaryCards: $('summaryCards'), cutTable: $('cutTable'), scenarioTable: $('scenarioTable'), studentTable: $('studentTable'), rowCountInfo: $('rowCountInfo')
+};
+let lastRows = [];
+
+function toNum(x){
+  if (x === null || x === undefined) return null;
+  const s = String(x).trim().replace(/,/g,'').replace(/%$/,'');
+  if (s === '') return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+function fmt(n, d=2){
+  if (n === null || n === undefined || Number.isNaN(n)) return '';
+  const v = Number(n);
+  return Number.isInteger(v) ? String(v) : v.toFixed(d).replace(/\.00$/,'').replace(/(\.\d)0$/,'$1');
+}
+function clamp(n,min=0,max=100){ return Math.max(min, Math.min(max, n)); }
+function esc(s){ return String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+function splitLine(line){
+  if (line.includes('\t')) return line.split('\t');
+  if (line.includes(',')) return line.split(',');
+  return line.trim().split(/\s+/);
+}
+
+function parseScoreTable(text){
+  const lines = (text || '').split(/\r?\n/).map(l => l.trimEnd()).filter(l => l.trim() !== '');
+  if (!lines.length) return {map:new Map(), rows:0, warning:'빈 입력'};
+  let raw = lines.map(splitLine);
+  const maxCols = Math.max(...raw.map(r => r.length));
+  raw = raw.map(r => Array.from({length:maxCols}, (_,i)=> r[i] ?? ''));
+
+  const first = raw[0].map(c => String(c).trim());
+  const hasHeader = first.some(c => /반|번호|학번|No\.?/i.test(c));
+  let classLabels = [];
+  let dataStart = 0;
+  let hasNumberCol = true;
+
+  if (hasHeader) {
+    dataStart = 1;
+    hasNumberCol = /번호|학번|no\.?|^$/i.test(first[0]) || toNum(first[0]) === null;
+    const startCol = hasNumberCol ? 1 : 0;
+    for (let c=startCol; c<maxCols; c++) {
+      const label = first[c] || `${c-startCol+1}반`;
+      const m = String(label).match(/(\d+)/);
+      classLabels.push(m ? Number(m[1]) : (c-startCol+1));
+    }
+  } else {
+    const firstColNums = raw.slice(0, Math.min(raw.length, 5)).map(r => toNum(r[0])).filter(v => v !== null);
+    hasNumberCol = firstColNums.length >= Math.min(raw.length, 3);
+    const startCol = hasNumberCol ? 1 : 0;
+    for (let c=startCol; c<maxCols; c++) classLabels.push(c-startCol+1);
+  }
+
+  const map = new Map();
+  let used = 0;
+  for (let r=dataStart; r<raw.length; r++) {
+    const row = raw[r];
+    const number = hasNumberCol ? toNum(row[0]) : (r-dataStart+1);
+    if (number === null) continue;
+    const startCol = hasNumberCol ? 1 : 0;
+    for (let c=startCol; c<maxCols; c++) {
+      const val = toNum(row[c]);
+      if (val === null) continue;
+      const classNo = classLabels[c-startCol] ?? (c-startCol+1);
+      const key = `${classNo}-${number}`;
+      map.set(key, {classNo, number, score:val});
+      used++;
+    }
+  }
+  return {map, rows:used, warning: used ? '' : '숫자 자료를 찾지 못함'};
+}
+
+function readConfig(){
+  const pctA = toNum(els.pctA.value) ?? 0, pctB = toNum(els.pctB.value) ?? 0, pctC = toNum(els.pctC.value) ?? 0, pctD = toNum(els.pctD.value) ?? 0;
+  const weights = {
+    exam1: toNum(els.wExam1.value) ?? 0,
+    exam2: toNum(els.wExam2.value) ?? 0,
+    writing1: toNum(els.wWriting1.value) ?? 0,
+    writing2: toNum(els.wWriting2.value) ?? 0,
+  };
+  const delta = toNum(els.deltaExam2.value) ?? 0;
+  return {pctA,pctB,pctC,pctD,weights,delta};
+}
+
+function buildRows(deltaOverride=null){
+  const p1 = parseScoreTable(els.exam1Text.value);
+  const p2 = parseScoreTable(els.writing1Text.value);
+  const p3 = parseScoreTable(els.writing2Text.value);
+  $('statusExam1').textContent = p1.rows ? `${p1.rows}개 점수 인식` : p1.warning;
+  $('statusWriting1').textContent = p2.rows ? `${p2.rows}개 점수 인식` : p2.warning;
+  $('statusWriting2').textContent = p3.rows ? `${p3.rows}개 점수 인식` : p3.warning;
+
+  const cfg = readConfig();
+  const delta = deltaOverride ?? cfg.delta;
+  const keys = new Set([...p1.map.keys(), ...p2.map.keys(), ...p3.map.keys()]);
+  const rows = [];
+  const missing = [];
+  keys.forEach(key => {
+    const a = p1.map.get(key), b = p2.map.get(key), c = p3.map.get(key);
+    if (!a || !b || !c) {
+      const base = a || b || c || {};
+      const [fallbackClass, fallbackNumber] = String(key).split('-');
+      const missingItems = [];
+      if (!a) missingItems.push('1차지필');
+      if (!b) missingItems.push('1차서술');
+      if (!c) missingItems.push('2차서술');
+      missing.push({
+        key,
+        classNo: base.classNo ?? fallbackClass ?? '',
+        number: base.number ?? fallbackNumber ?? '',
+        missingItems
+      });
+      return;
+    }
+    const exam1 = a.score;
+    const exam2 = clamp(exam1 + delta);
+    const total = (exam1*cfg.weights.exam1 + exam2*cfg.weights.exam2 + b.score*cfg.weights.writing1 + c.score*cfg.weights.writing2)/100;
+    rows.push({key, classNo:a.classNo, number:a.number, exam1, exam2, writing1:b.score, writing2:c.score, total:Math.round(total*1000)/1000});
+  });
+  rows.sort((x,y) => y.total - x.total || y.exam1 - x.exam1 || x.classNo-y.classNo || x.number-y.number);
+  missing.sort((x,y) => Number(x.classNo)-Number(y.classNo) || Number(x.number)-Number(y.number));
+  return {rows, cfg, parsed:[p1,p2,p3], missingCount:missing.length, missing};
+}
+
+function cumulativeCounts(n, cfg){
+  const totalPct = cfg.pctA + cfg.pctB + cfg.pctC + cfg.pctD;
+  const cumA = Math.min(n, Math.ceil(n * cfg.pctA / 100));
+  const cumB = Math.min(n, Math.ceil(n * (cfg.pctA + cfg.pctB) / 100));
+  const cumC = Math.min(n, Math.ceil(n * (cfg.pctA + cfg.pctB + cfg.pctC) / 100));
+  const cumD = Math.min(n, Math.ceil(n * totalPct / 100));
+  return {cumA,cumB,cumC,cumD, counts:{A:cumA, B:Math.max(0,cumB-cumA), C:Math.max(0,cumC-cumB), D:Math.max(0,cumD-cumC), E:Math.max(0,n-cumD)}, totalPct};
+}
+function gradeForRank(rank, cuts){
+  if (rank <= cuts.cumA) return 'A';
+  if (rank <= cuts.cumB) return 'B';
+  if (rank <= cuts.cumC) return 'C';
+  if (rank <= cuts.cumD) return 'D';
+  return 'E';
+}
+function getBoundary(rows, rank){
+  if (!rows.length || rank < 1) return null;
+  const idx = Math.min(rows.length-1, rank-1);
+  const last = rows[idx];
+  const next = rows[idx+1];
+  return {rank:idx+1, last, next, cut:last.total, mid: next ? Math.round(((last.total + next.total)/2)*1000)/1000 : last.total};
+}
+function cutSet(rows,cfg){
+  const cuts = cumulativeCounts(rows.length,cfg);
+  return {
+    cuts,
+    AB:getBoundary(rows,cuts.cumA),
+    BC:getBoundary(rows,cuts.cumB),
+    CD:getBoundary(rows,cuts.cumC),
+    DE:getBoundary(rows,cuts.cumD),
+  };
+}
+
+function boundaryTieWarnings(set){
+  const labels = [['A/B', set.AB], ['B/C', set.BC], ['C/D', set.CD], ['D/E', set.DE]];
+  return labels
+    .filter(([label,b]) => b && b.next && Math.abs((b.last.total ?? 0) - (b.next.total ?? 0)) < 0.0005)
+    .map(([label,b]) => `${label} 경계에 동점자가 있습니다. 단순 순위 기준으로 표시되므로 실제 동점자 처리 기준과 다를 수 있습니다.`);
+}
+function missingSummary(missing){
+  if (!missing || !missing.length) return '';
+  const sample = missing.slice(0, 12).map(m => `${m.classNo}반 ${m.number}번(${m.missingItems.join('/')})`).join(', ');
+  const tail = missing.length > 12 ? ` 외 ${missing.length-12}명` : '';
+  return `일부 성적이 없어 계산에서 제외된 학생: ${missing.length}명 — ${sample}${tail}`;
+}
+
+function renderSummary(rows,cfg,set){
+  const wsum = cfg.weights.exam1+cfg.weights.exam2+cfg.weights.writing1+cfg.weights.writing2;
+  const avg = rows.length ? rows.reduce((s,r)=>s+r.total,0)/rows.length : 0;
+  const cards = [
+    ['학생정원', `${rows.length}명`, ''],
+    ['성취 인원', `A ${set.cuts.counts.A} · B ${set.cuts.counts.B} · C ${set.cuts.counts.C}`, `D ${set.cuts.counts.D} · E ${set.cuts.counts.E}`],
+    ['A/B 컷', set.AB ? fmt(set.AB.cut) : '-', `누적 ${set.cuts.cumA}명`],
+    ['B/C 컷', set.BC ? fmt(set.BC.cut) : '-', `누적 ${set.cuts.cumB}명`],
+    ['예상 평균', fmt(avg), `반영비율 합계 ${fmt(wsum,1)}%`],
+  ];
+  els.summaryCards.innerHTML = cards.map(([t,v,s]) => `<div class="kpi"><div class="t">${esc(t)}</div><div class="v">${esc(v)}</div><div class="small">${esc(s)}</div></div>`).join('');
+}
+function renderCutTable(rows,cfg,set){
+  const tb = els.cutTable.querySelector('tbody');
+  const data = [['AB',set.AB],['BC',set.BC],['CD',set.CD],['DE',set.DE]];
+  tb.innerHTML = data.map(([label,b]) => {
+    if (!b) return `<tr><td>${label}</td><td colspan="7">계산 불가</td></tr>`;
+    const r = b.last;
+    return `<tr>
+      <td><span class="grade-chip g${label[0]}">${label}</span></td><td>${b.rank}명</td><td>${fmt(r.exam1)}</td><td>${fmt(r.exam2)}</td><td>${fmt(r.writing1)}</td><td>${fmt(r.writing2)}</td><td><b>${fmt(b.cut)}</b></td><td>${fmt(b.mid)}</td>
+    </tr>`;
+  }).join('');
+}
+function renderScenario(cfg){
+  const tb = els.scenarioTable.querySelector('tbody');
+  const deltas = [-15,-10,-5,0,5,10,15];
+  tb.innerHTML = deltas.map(d => {
+    const {rows} = buildRows(d);
+    const set = cutSet(rows,cfg);
+    const avg = rows.length ? rows.reduce((s,r)=>s+r.total,0)/rows.length : 0;
+    const deltaText = d > 0 ? `+${d}` : `${d}`;
+    return `<tr><td>${deltaText}</td><td>${set.AB?fmt(set.AB.cut):'-'}</td><td>${set.BC?fmt(set.BC.cut):'-'}</td><td>${set.CD?fmt(set.CD.cut):'-'}</td><td>${set.DE?fmt(set.DE.cut):'-'}</td><td>${fmt(avg)}</td></tr>`;
+  }).join('');
+}
+function renderStudents(rows,cfg,set){
+  const tb = els.studentTable.querySelector('tbody');
+  if (!rows.length) {
+    tb.innerHTML = `<tr><td colspan="9">세 자료가 모두 있는 학생을 찾지 못했습니다. 붙여넣기 범위를 확인해 주세요.</td></tr>`;
+    els.rowCountInfo.textContent = '0명';
+    return;
+  }
+  tb.innerHTML = rows.map((r,i) => {
+    const rank = i+1;
+    const g = gradeForRank(rank,set.cuts);
+    return `<tr class="row${esc(g)}"><td>${esc(rank)}</td><td><span class="grade-chip g${esc(g)}">${esc(g)}</span></td><td>${esc(r.classNo)}반</td><td>${esc(r.number)}</td><td>${esc(fmt(r.exam1))}</td><td>${esc(fmt(r.exam2))}</td><td>${esc(fmt(r.writing1))}</td><td>${esc(fmt(r.writing2))}</td><td><b>${esc(fmt(r.total))}</b></td></tr>`;
+  }).join('');
+  els.rowCountInfo.textContent = `${rows.length}명`;
+}
+
+function calculate(){
+  const {rows,cfg,missingCount,missing} = buildRows();
+  const set = cutSet(rows,cfg);
+  lastRows = rows.map((r,i)=> ({rank:i+1, grade:gradeForRank(i+1,set.cuts), ...r}));
+  renderSummary(rows,cfg,set);
+  renderCutTable(rows,cfg,set);
+  renderScenario(cfg);
+  renderStudents(rows,cfg,set);
+
+  const wsum = cfg.weights.exam1+cfg.weights.exam2+cfg.weights.writing1+cfg.weights.writing2;
+  const warnings = [];
+  const missMsg = missingSummary(missing);
+  if (Math.abs(wsum-100) > 0.001) warnings.push(`반영비율 합계가 ${fmt(wsum,1)}%입니다. 보통 100%가 되도록 맞추는 것이 좋습니다.`);
+  if (cfg.pctA+cfg.pctB+cfg.pctC+cfg.pctD > 100) warnings.push('A~D 비율 합계가 100%를 넘습니다. D/E 구간이 정상적으로 나뉘지 않을 수 있습니다.');
+  if (!rows.length) warnings.push('1차지필·1차서술·2차서술 세 자료가 모두 있는 학생만 계산합니다.');
+  warnings.push(...boundaryTieWarnings(set));
+  const baseMsg = `계산 완료: 2차지필은 <b>1차지필 ${cfg.delta>=0?'+':''}${fmt(cfg.delta)}</b>로 예측했습니다. 누적 인원은 엑셀처럼 ROUNDUP 방식으로 계산합니다. 입력 점수는 100점 만점 기준 원점수를 전제로 합니다.`;
+  els.calcInfo.className = warnings.length ? 'notice bad' : 'notice ok';
+  els.calcInfo.innerHTML = warnings.length ? `${baseMsg}<br>${warnings.map(esc).join('<br>')}` : baseMsg;
+
+  const missingInfoEl = $('missingInfo');
+  if (missMsg) {
+    missingInfoEl.className = 'notice missing';
+    missingInfoEl.textContent = `⚠️ ${missMsg}`;
+  } else {
+    missingInfoEl.className = 'notice missing hide';
+    missingInfoEl.textContent = '';
+  }
+}
+
+function exportCSV(){
+  if (!lastRows.length) calculate();
+  if (!lastRows.length) return alert('내보낼 자료가 없습니다.');
+  if (!confirm('CSV 파일에는 학생 성적 정보가 포함됩니다. 개인 PC 또는 학교 보안 저장소에만 보관하세요. 내보낼까요?')) return;
+  const header = ['석차','성취','반','번호','1차지필','2차지필예상','1차서술','2차서술','예상총점'];
+  const body = lastRows.map(r => [r.rank,r.grade,r.classNo,r.number,r.exam1,r.exam2,r.writing1,r.writing2,r.total]);
+  const csv = [header, ...body].map(row => row.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = '분할점수_산출컷_예상.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+}
+
+function resetAll(){
+  els.exam1Text.value = '';
+  els.writing1Text.value = '';
+  els.writing2Text.value = '';
+  els.pctA.value = 20; els.pctB.value = 30; els.pctC.value = 30; els.pctD.value = 15;
+  els.wExam1.value = 30; els.wExam2.value = 30; els.wWriting1.value = 20; els.wWriting2.value = 20;
+  els.deltaExam2.value = 0; els.deltaRange.value = 0;
+  ['statusExam1','statusWriting1','statusWriting2'].forEach(id => { if ($(id)) $(id).textContent = '대기'; });
+  lastRows = [];
+  calculate();
+}
+
+$('clearTextBtn').addEventListener('click', () => {
+  if (!confirm('성적 붙여넣기 칸을 모두 비울까요?')) return;
+  els.exam1Text.value = ''; els.writing1Text.value = ''; els.writing2Text.value = ''; calculate();
+});
+$('fullResetBtn').addEventListener('click', () => {
+  if (!confirm('입력 자료와 설정값을 모두 초기화할까요?')) return;
+  resetAll();
+});
+$('calcBtn').addEventListener('click', calculate);
+$('exportBtn').addEventListener('click', exportCSV);
+els.deltaRange.addEventListener('input', () => { els.deltaExam2.value = els.deltaRange.value; calculate(); });
+els.deltaExam2.addEventListener('input', () => { els.deltaRange.value = clamp(toNum(els.deltaExam2.value) ?? 0, -30, 30); calculate(); });
+['exam1Text','writing1Text','writing2Text','pctA','pctB','pctC','pctD','wExam1','wExam2','wWriting1','wWriting2'].forEach(id => {
+  $(id).addEventListener('input', () => { clearTimeout(window.__calcTimer); window.__calcTimer = setTimeout(calculate, 350); });
+});
+calculate();
+
+// ── Excel / CSV 업로드 ────────────────────────────────────────────────
+function sheetToTsv(ws){
+  if(!ws['!ref']) return '';
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  const rows=[];
+  for(let r=range.s.r;r<=range.e.r;r++){
+    const row=[];
+    let hasVal=false;
+    for(let c=range.s.c;c<=range.e.c;c++){
+      const cell=ws[XLSX.utils.encode_cell({r,c})];
+      const v=cell&&cell.v!==undefined?cell.v:'';
+      row.push(v);
+      if(v!=='') hasVal=true;
+    }
+    if(hasVal) rows.push(row.join('\t'));
+  }
+  return rows.join('\n');
+}
+
+// 수동 열 선택 팝업
+function pickCol(hdrs, label, autoTest){
+  const hdrList=hdrs.map((h,i)=>`${i+1}. ${h||'(빈열)'}`).join('\n');
+  let idx=hdrs.findIndex(h=>autoTest(String(h).trim()));
+  if(idx!==-1) return idx;
+  const ans=prompt(`"${label}" 열을 선택하세요 (번호 입력):\n\n${hdrList}`);
+  const n=parseInt(ans)-1;
+  return(n>=0&&n<hdrs.length)?n:-1;
+}
+
+// 엑셀 데이터 전체 읽기
+function readSheetData(ws){
+  if(!ws['!ref']) return [];
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  const data=[];
+  for(let r=range.s.r;r<=range.e.r;r++){
+    const row=[];
+    for(let c=range.s.c;c<=range.e.c;c++){
+      const cell=ws[XLSX.utils.encode_cell({r,c})];
+      row.push(cell&&cell.v!==undefined?cell.v:'');
+    }
+    data.push(row);
+  }
+  return data;
+}
+
+// ── 전략 1: 가로 형식 ──────────────────────────────────────────────────
+// 상단 행 중 "1 2 3 4 ..." 처럼 연속 반 번호가 가로로 나열된 행을 찾아
+// 해당 열만 추출하고 번호(행) × 반(열) 표로 정리
+function tryHorizontalFormat(data){
+  const MAX_CLASS=30, SCAN_ROWS=12;
+
+  for(let r=0;r<Math.min(data.length,SCAN_ROWS);r++){
+    const row=data[r];
+    // 각 셀에서 반 번호 후보 수집
+    const candidates=[];
+    for(let c=0;c<row.length;c++){
+      const s=String(row[c]).trim();
+      const m=s.match(/^(\d+)(반)?$/);
+      if(m){
+        const n=parseInt(m[1]);
+        if(n>=1&&n<=MAX_CLASS) candidates.push({c,n});
+      }
+    }
+    if(candidates.length<2) continue;
+
+    // 열 인덱스 기준 오름차순 정렬 후 반 번호도 오름차순인지 확인
+    candidates.sort((a,b)=>a.c-b.c);
+    const increasing=candidates.every((x,i)=>i===0||x.n>candidates[i-1].n);
+    if(!increasing) continue;
+
+    // 반 열들 왼쪽에서 번호 열 탐색
+    const classColSet=new Set(candidates.map(x=>x.c));
+    let numCol=-1;
+    for(let c=candidates[0].c-1;c>=0;c--){
+      if(classColSet.has(c)) continue;
+      const hVal=String(row[c]).trim();
+      // 헤더에 "번호" 텍스트 or 빈칸(첫 번째 열 관례)이면 번호 열
+      if(/번호|학번|no\.?/i.test(hVal)||hVal===''||c===0){numCol=c;break;}
+    }
+    if(numCol===-1) numCol=candidates[0].c-1; // 바로 왼쪽 열 폴백
+
+    // 데이터 행 추출
+    const classNums=candidates.map(x=>x.n);
+    const classColIdxs=candidates.map(x=>x.c);
+    const header=['번호',...classNums.map(n=>`${n}반`)];
+    const bodyRows=[];
+    for(let dr=r+1;dr<data.length;dr++){
+      const drow=data[dr];
+      const num= numCol>=0 ? toNum(drow[numCol]) : null;
+      if(num===null) continue;
+      const scores=classColIdxs.map(ci=>{const v=toNum(drow[ci]);return v!==null?v:'';});
+      if(scores.every(v=>v==='')) continue;
+      bodyRows.push([num,...scores]);
+    }
+    if(bodyRows.length>0)
+      return [header,...bodyRows].map(r=>r.join('\t')).join('\n');
+  }
+  return null;
+}
+
+// ── 전략 2: 세로 일람표 형식 ──────────────────────────────────────────
+// 반·번호 열이 세로로 있는 일람표를 피벗
+function tryVerticalFormat(data){
+  const hdrs=data[0].map(h=>String(h).trim());
+  const classIdx=pickCol(hdrs,'반(학급)',h=>/반|학급|학반/i.test(h));
+  if(classIdx===-1) return null;
+  const numIdx=pickCol(hdrs,'번호(학번)',h=>/^(번호|학번|no\.?)$/i.test(h));
+  if(numIdx===-1) return null;
+
+  const skipPat=/이름|성명|name|반|학급|학반|번호|학번|학교|학년|성별|연번|순번/i;
+  const scoreCols=hdrs.map((h,i)=>({h,i}))
+    .filter(({h,i})=>i!==classIdx&&i!==numIdx&&!skipPat.test(h)&&h!=='');
+
+  let scoreIdx;
+  if(scoreCols.length===0){
+    scoreIdx=pickCol(hdrs,'점수',()=>false);
+    if(scoreIdx===-1) return null;
+  } else if(scoreCols.length===1){
+    scoreIdx=scoreCols[0].i;
+  } else {
+    const opts=scoreCols.map(({h,i})=>`${i+1}. ${h}`).join('\n');
+    const ans=prompt(`점수 열을 선택하세요 (번호 입력):\n\n${opts}`);
+    const pick=scoreCols.find(({i})=>i===parseInt(ans)-1);
+    scoreIdx=pick?pick.i:scoreCols[scoreCols.length-1].i;
+  }
+
+  const pivotMap=new Map();
+  const classSet=new Set();
+  for(let r=1;r<data.length;r++){
+    const row=data[r];
+    const cn=toNum(row[classIdx]),sn=toNum(row[numIdx]),sc=toNum(row[scoreIdx]);
+    if(cn===null||sn===null) continue;
+    classSet.add(cn);
+    if(!pivotMap.has(sn)) pivotMap.set(sn,{});
+    pivotMap.get(sn)[cn]=sc;
+  }
+  if(!classSet.size) return null;
+
+  const classes=[...classSet].sort((a,b)=>a-b);
+  const numbers=[...pivotMap.keys()].sort((a,b)=>a-b);
+  const header=['번호',...classes.map(c=>`${c}반`)];
+  const bodyRows=numbers.map(n=>[n,...classes.map(c=>pivotMap.get(n)[c]??'')]);
+  return [header,...bodyRows].map(r=>r.join('\t')).join('\n');
+}
+
+function detectAndConvert(ws){
+  const data=readSheetData(ws);
+  if(!data.length) return '';
+  return tryHorizontalFormat(data) ?? tryVerticalFormat(data) ?? sheetToTsv(ws);
+}
+
+async function handleFileUpload(inputEl,textareaId,statusId){
+  const file=inputEl.files[0];
+  if(!file) return;
+  const statusEl=$(statusId);
+  statusEl.textContent='처리 중…';
+  try{
+    let tsv='';
+    const name=file.name.toLowerCase();
+    if(name.endsWith('.csv')){
+      tsv=await file.text();
+      statusEl.textContent='업로드 완료 (CSV)';
+    } else {
+      const buf=await file.arrayBuffer();
+      const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+      let sheetName=wb.SheetNames[0];
+      if(wb.SheetNames.length>1){
+        const opts=wb.SheetNames.map((n,i)=>`${i+1}. ${n}`).join('\n');
+        const ans=prompt(`여러 시트가 있습니다. 사용할 시트 번호를 입력하세요:\n${opts}`);
+        const idx=parseInt(ans)-1;
+        if(idx>=0&&idx<wb.SheetNames.length) sheetName=wb.SheetNames[idx];
+      }
+      tsv=detectAndConvert(wb.Sheets[sheetName]);
+      statusEl.textContent=`업로드 완료 (${sheetName})`;
+    }
+    $(textareaId).value=tsv;
+    $(textareaId).dispatchEvent(new Event('input'));
+  }catch(err){
+    statusEl.textContent='오류: '+err.message;
+    alert('파일 처리 오류: '+err.message);
+  }
+  inputEl.value='';
+}
+
+function clearSingleInput(textareaId,statusId){
+  if(!confirm('이 칸의 내용을 삭제할까요?')) return;
+  $(textareaId).value='';
+  $(statusId).textContent='대기';
+  $(textareaId).dispatchEvent(new Event('input'));
+}
+</script>
+</body>
+</html>
