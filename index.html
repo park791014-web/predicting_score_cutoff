@@ -138,7 +138,7 @@
           </div>
           <div class="paste-box">
             <div class="paste-title">
-              <span>1차서술/1차수행</span>
+              <span>1차 수행평가</span>
               <div class="paste-actions">
                 <label class="upload-label" for="fileWriting1">📂 엑셀 업로드</label>
                 <input type="file" id="fileWriting1" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileUpload(this,'writing1Text','statusWriting1')">
@@ -150,7 +150,7 @@
           </div>
           <div class="paste-box">
             <div class="paste-title">
-              <span>2차서술/2차수행</span>
+              <span>2차 수행평가</span>
               <div class="paste-actions">
                 <label class="upload-label" for="fileWriting2">📂 엑셀 업로드</label>
                 <input type="file" id="fileWriting2" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileUpload(this,'writing2Text','statusWriting2')">
@@ -190,8 +190,8 @@
             <div class="input-grid cols4">
               <div><label>1차지필</label><input type="number" id="wExam1" value="30" step="0.1"></div>
               <div><label>2차지필</label><input type="number" id="wExam2" value="30" step="0.1"></div>
-              <div><label>1차서술</label><input type="number" id="wWriting1" value="20" step="0.1"></div>
-              <div><label>2차서술</label><input type="number" id="wWriting2" value="20" step="0.1"></div>
+              <div><label>1차수행</label><input type="number" id="wWriting1" value="20" step="0.1"></div>
+              <div><label>2차수행</label><input type="number" id="wWriting2" value="20" step="0.1"></div>
             </div>
             <p class="footnote">기본값은 첨부파일처럼 30:30:20:20입니다.</p>
           </div>
@@ -222,7 +222,7 @@
       <div class="card-b">
         <div class="table-wrap" style="max-height:none;">
           <table class="cut-table" id="cutTable">
-            <thead><tr><th>경계</th><th>누적 인원</th><th>1차지필</th><th>2차지필 예상</th><th>1차서술</th><th>2차서술</th><th>총점컷</th><th>중간컷</th></tr></thead>
+            <thead><tr><th>경계</th><th>누적 인원</th><th>1차지필</th><th>2차지필 예상</th><th>1차수행</th><th>2차수행</th><th>총점컷</th><th>중간컷</th></tr></thead>
             <tbody><tr><td colspan="8">자료를 넣고 계산해 주세요.</td></tr></tbody>
           </table>
         </div>
@@ -250,7 +250,7 @@
     <div class="card-b">
       <div class="table-wrap">
         <table id="studentTable">
-          <thead><tr><th>석차</th><th>성취</th><th>반</th><th>번호</th><th>1차지필</th><th>2차지필 예상</th><th>1차서술</th><th>2차서술</th><th>예상 총점</th></tr></thead>
+          <thead><tr><th>석차</th><th>성취</th><th>반</th><th>번호</th><th>1차지필</th><th>2차지필 예상</th><th>1차수행</th><th>2차수행</th><th>예상 총점</th></tr></thead>
           <tbody><tr><td colspan="9">엑셀 자료를 붙여넣거나 파일을 선택해 주세요.</td></tr></tbody>
         </table>
       </div>
@@ -479,8 +479,8 @@ function buildRows(deltaOverride=null){
       const [fallbackClass, fallbackNumber] = String(key).split('-');
       const missingItems = [];
       if (!a) missingItems.push('1차지필');
-      if (!b) missingItems.push('1차서술');
-      if (!c) missingItems.push('2차서술');
+      if (!b) missingItems.push('1차수행');
+      if (!c) missingItems.push('2차수행');
       missing.push({
         key,
         classNo: base.classNo ?? fallbackClass ?? '',
@@ -608,7 +608,7 @@ function calculate(){
   const missMsg = missingSummary(missing);
   if (Math.abs(wsum-100) > 0.001) warnings.push(`반영비율 합계가 ${fmt(wsum,1)}%입니다. 보통 100%가 되도록 맞추는 것이 좋습니다.`);
   if (cfg.pctA+cfg.pctB+cfg.pctC+cfg.pctD > 100) warnings.push('A~D 비율 합계가 100%를 넘습니다. D/E 구간이 정상적으로 나뉘지 않을 수 있습니다.');
-  if (!rows.length) warnings.push('1차지필·1차서술·2차서술 세 자료가 모두 있는 학생만 계산합니다.');
+  if (!rows.length) warnings.push('1차지필·1차수행·2차수행 세 자료가 모두 있는 학생만 계산합니다.');
   warnings.push(...boundaryTieWarnings(set));
   const baseMsg = `계산 완료: 2차지필은 <b>1차지필 ${cfg.delta>=0?'+':''}${fmt(cfg.delta)}</b>로 예측했습니다. 누적 인원은 엑셀처럼 ROUNDUP 방식으로 계산합니다. 입력 점수는 100점 만점 기준 원점수를 전제로 합니다.`;
   els.calcInfo.className = warnings.length ? 'notice bad' : 'notice ok';
@@ -628,7 +628,7 @@ function exportCSV(){
   if (!lastRows.length) calculate();
   if (!lastRows.length) return alert('내보낼 자료가 없습니다.');
   if (!confirm('CSV 파일에는 학생 성적 정보가 포함됩니다. 개인 PC 또는 학교 보안 저장소에만 보관하세요. 내보낼까요?')) return;
-  const header = ['석차','성취','반','번호','1차지필','2차지필예상','1차서술','2차서술','예상총점'];
+  const header = ['석차','성취','반','번호','1차지필','2차지필예상','1차수행','2차수행','예상총점'];
   const body = lastRows.map(r => [r.rank,r.grade,r.classNo,r.number,r.exam1,r.exam2,r.writing1,r.writing2,r.total]);
   const csv = [header, ...body].map(row => row.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
@@ -650,7 +650,7 @@ function resetAll(){
   calculate();
 }
 
-$('clearTextBtn').addEventListener('click', () => {
+$('clearTextBtn'.addEventListener('click', () => {
   if (!confirm('성적 붙여넣기 칸을 모두 비울까요?')) return;
   els.exam1Text.value = ''; els.writing1Text.value = ''; els.writing2Text.value = ''; calculate();
 });
