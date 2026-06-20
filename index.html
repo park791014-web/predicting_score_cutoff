@@ -259,6 +259,7 @@
 </div>
 
 <script src="./xlsx.full.min.js"></script>
+<script>if(typeof XLSX==='undefined'){document.write('<script src="./xlsx_full.min.js"><\/script>');}</script>
 <script>
 // ── 배경 애니메이션 ─────────────────────────────────────────────────────
 (function(){
@@ -650,7 +651,7 @@ function resetAll(){
   calculate();
 }
 
-$('clearTextBtn'.addEventListener('click', () => {
+$('clearTextBtn').addEventListener('click', () => {
   if (!confirm('성적 붙여넣기 칸을 모두 비울까요?')) return;
   els.exam1Text.value = ''; els.writing1Text.value = ''; els.writing2Text.value = ''; calculate();
 });
@@ -830,6 +831,9 @@ async function handleFileUpload(inputEl,textareaId,statusId){
       tsv=await file.text();
       statusEl.textContent='업로드 완료 (CSV)';
     } else {
+      if(typeof XLSX === 'undefined'){
+        throw new Error('엑셀 해석 파일(xlsx.full.min.js 또는 xlsx_full.min.js)을 index.html과 같은 폴더에 올려 주세요.');
+      }
       const buf=await file.arrayBuffer();
       const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
       let sheetName=wb.SheetNames[0];
