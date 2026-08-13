@@ -1,766 +1,453 @@
-
 <!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="학급별 지필·수행평가 점수로 예상 총점, 석차, A~E 성취도와 경계점수를 브라우저에서 계산하는 교사용 도구입니다." />
-  <meta property="og:title" content="분할점수 산출컷 예측기" />
-  <meta property="og:description" content="학급별 점수를 브라우저 안에서 처리해 예상 총점, 석차, 성취도와 경계점수를 계산합니다." />
+  <meta name="description" content="현재 성적과 예상 평가자료를 바탕으로 학기말 성취도 분포와 경계 학생을 사전에 살펴보는 교사용 시뮬레이션 도구입니다." />
+  <meta property="og:title" content="분할점수 산출컷 예측기 V2" />
+  <meta property="og:description" content="문항분석과 현재 성적 자료로 학기말 A~E 분포, 경계점수와 경계 주변 학생을 예측합니다." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://predicting-score-cutoff.vercel.app/" />
   <link rel="canonical" href="https://predicting-score-cutoff.vercel.app/" />
-  <title>분할점수 산출컷 예측기</title>
+  <title>분할점수 산출컷 예측기 V2</title>
   <style>
     :root{
-      --bg:#f5f7fb; --card:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
-      --primary:#2458d3; --primary2:#eaf1ff; --danger:#dc2626; --ok:#047857;
-      --a:#ffe1e7; --b:#fff0cf; --c:#e8f7dc; --d:#e9e4f5; --e:#f1f5f9;
-      --a-strong:#d72655; --b-strong:#bd7400; --c-strong:#2f7d32; --d-strong:#6d4aa3; --e-strong:#475569;
-      --shadow:0 14px 34px rgba(31,41,55,.10);
-      --radius:18px;
+      --bg:#f4f6f8;--surface:#fff;--surface-2:#f8fafc;--ink:#172033;--muted:#5f6b7a;--line:#d8dee8;
+      --blue:#2457a7;--blue-dark:#173f7e;--blue-soft:#eaf1fb;--green:#18794e;--green-soft:#e9f6ef;
+      --orange:#b45309;--orange-soft:#fff4e5;--red:#b42318;--red-soft:#fff0ee;--gray:#667085;--gray-soft:#eef1f4;
+      --a:#1f4e8c;--b:#087f8c;--c:#2f7d32;--d:#b25c00;--e:#596273;--i:#8a3b5c;
+      --shadow:0 3px 12px rgba(20,34,54,.06);--radius:12px;
     }
     *{box-sizing:border-box}
-    body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;}
-    .wrap{max-width:1380px;margin:0 auto;padding:28px 22px 54px;}
-    .hero{display:flex;gap:18px;align-items:flex-end;justify-content:space-between;margin-bottom:18px;}
-    h1{font-size:30px;margin:0 0 8px;letter-spacing:-.04em;}
-    .sub{margin:0;color:var(--muted);line-height:1.55;font-size:15px;}
-    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap;}
-    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:start;}
-    @media(max-width:1050px){.grid{grid-template-columns:1fr}.hero{display:block}.pill{margin-top:12px}}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
-    .card-h{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(255,255,255,.78);}
-    .card-h h2{font-size:18px;margin:0;letter-spacing:-.03em;}
-    .card-b{padding:18px;}
-    .paste-grid{display:grid;grid-template-columns:1fr;gap:14px;}
-    .paste-box{border:1px solid var(--line);border-radius:15px;overflow:hidden;background:#fbfdff;}
-    .paste-title{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);background:#f8fafc;font-weight:800;}
-    .small{font-size:12px;color:var(--muted);font-weight:600;}
-    textarea{width:100%;min-height:90px;display:block;border:0;outline:0;resize:vertical;padding:12px 13px;font-family:"D2Coding","Consolas",monospace;font-size:12px;line-height:1.42;background:white;color:#111827;}
-    textarea::placeholder{color:#9ca3af;}
-    .btns{display:flex;flex-wrap:wrap;gap:9px;align-items:center;}
-    button{appearance:none;border:0;border-radius:12px;background:var(--primary);color:white;padding:10px 14px;font-weight:800;cursor:pointer;box-shadow:0 5px 12px rgba(36,88,211,.18);}
-    button:hover{filter:brightness(.98);transform:translateY(-1px)}
-    button.secondary{background:#f3f4f6;color:#111827;box-shadow:none;border:1px solid var(--line);}
-    button.ghost{background:white;color:#374151;box-shadow:none;border:1px solid var(--line);padding:7px 10px;border-radius:10px;font-size:12px;}
-    button.warn{background:#fee2e2;color:#991b1b;box-shadow:none;border:1px solid #fecaca;}
-    .settings{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-    @media(max-width:680px){.settings{grid-template-columns:1fr}}
-    .section{border:1px solid var(--line);border-radius:15px;background:#fbfdff;padding:14px;}
-    .section h3{margin:0 0 10px;font-size:15px;letter-spacing:-.02em;}
-    .input-grid{display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:10px;}
-    .input-grid.cols4{grid-template-columns:repeat(4, minmax(0,1fr));}
-    label{display:block;font-size:12px;color:#4b5563;font-weight:800;margin-bottom:5px;}
-    input[type="number"]{width:100%;border:1px solid #d1d5db;border-radius:11px;padding:10px 10px;background:white;font-size:14px;outline:none;}
-    input[type="number"]:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(59,130,246,.14)}
-    input[type="range"]{width:100%;accent-color:var(--primary);}
-    .notice{border:1px solid #bfdbfe;background:#eff6ff;color:#1e40af;border-radius:14px;padding:12px 13px;font-size:13px;line-height:1.45;margin-top:12px;}
-    .notice.bad{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
-    .notice.ok{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
-    .notice.missing{background:#ffedd5;border-color:#fb923c;color:#9a3412;font-weight:800;box-shadow:0 6px 14px rgba(251,146,60,.16)}
-    .summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:18px 0;}
-    @media(max-width:1050px){.summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    .kpi{background:white;border:1px solid var(--line);border-radius:15px;padding:13px;box-shadow:0 8px 18px rgba(31,41,55,.05);}
-    .kpi .t{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:7px;}
-    .kpi .v{font-size:23px;font-weight:900;letter-spacing:-.03em;}
-    .grade-chip{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:25px;border-radius:999px;font-weight:900;font-size:13px;border:1px solid rgba(0,0,0,.08)}
-    .gA{background:var(--a);color:var(--a-strong)} .gB{background:var(--b);color:var(--b-strong)} .gC{background:var(--c);color:var(--c-strong)} .gD{background:var(--d);color:var(--d-strong)} .gE{background:var(--e);color:var(--e-strong)}
-    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:15px;background:white;max-height:620px;}
-    table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;}
-    thead th{position:sticky;top:0;z-index:1;background:#111827;color:white;text-align:center;font-size:12px;padding:10px 8px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.12)}
-    tbody td{padding:8px 8px;border-bottom:1px solid #edf0f5;text-align:center;white-space:nowrap;}
-    tbody tr:hover{outline:2px solid rgba(36,88,211,.22);outline-offset:-2px;}
-    tr.rowA td{background:var(--a)} tr.rowB td{background:var(--b)} tr.rowC td{background:var(--c)} tr.rowD td{background:var(--d)} tr.rowE td{background:#fff}
-    .cut-table tbody td:first-child{font-weight:900;text-align:left;}
-    .scenario-wrap{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;margin-top:18px;}
-    @media(max-width:980px){.scenario-wrap{grid-template-columns:1fr}}
-    .footnote{font-size:12px;color:var(--muted);line-height:1.55;margin:10px 0 0;}
-    .right-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
-
-    .security-box{border:1px solid #bfdbfe;background:rgba(239,246,255,.92);color:#1e3a8a;border-radius:18px;padding:14px 16px;margin:0 0 18px;box-shadow:0 10px 24px rgba(31,41,55,.08);line-height:1.55;font-size:14px;}
-    .security-box b{color:#1d4ed8}
-    .security-box ul{margin:8px 0 0 18px;padding:0;}
-    .security-box li{margin:3px 0;}
-    .security-box a{color:#1d4ed8;font-weight:800;}
-    .hide{display:none!important;}
-    .paste-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-    .upload-label{display:inline-flex;align-items:center;cursor:pointer;border:1px solid var(--line);border-radius:10px;padding:5px 9px;font-size:11px;font-weight:700;background:white;color:#374151;gap:3px;line-height:1;}
-    .upload-label:hover{background:#f3f4f6;}
-    button.del-sm{background:#fff5f5;color:#991b1b;box-shadow:none;border:1px solid #fecaca;border-radius:10px;padding:5px 9px;font-size:11px;}
-    button.del-sm:hover{background:#fee2e2;}
-    body{background:linear-gradient(-45deg,#dfe8fe,#ebe5fd,#dff7ee,#dfeefe,#fee5f4,#fef6e0);}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;line-height:1.55}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .wrap{max-width:1440px;margin:0 auto;padding:28px 22px 60px}
+    .hero{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:16px}
+    h1{margin:0 0 8px;font-size:30px;letter-spacing:-.04em;color:#102744}
+    h2{margin:0;font-size:20px;letter-spacing:-.025em}
+    h3{margin:0 0 12px;font-size:16px;letter-spacing:-.02em}
+    p{margin:0}
+    .sub{max-width:930px;color:var(--muted);font-size:14px}
+    .version{flex:none;border:1px solid #aac1e3;background:var(--blue-soft);color:var(--blue-dark);border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800}
+    .privacy{background:#f5f8fc;border:1px solid #cbd7e7;border-left:4px solid var(--blue);border-radius:10px;padding:13px 15px;margin-bottom:18px;color:#33445d;font-size:13px}
+    .privacy b{display:block;color:#173f7e;margin-bottom:3px}.privacy a{color:var(--blue);font-weight:800}
+    .main-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#e7ebf0;padding:5px;border-radius:12px;margin-bottom:18px}
+    .tab-btn{border:0;background:transparent;color:#4a5568;padding:12px 16px;border-radius:9px;font-weight:800}
+    .tab-btn.active{background:#fff;color:var(--blue-dark);box-shadow:0 1px 5px rgba(20,34,54,.12)}
+    .panel{display:none}.panel.active{display:block}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+    .card-head{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:15px 18px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+    .card-body{padding:18px}.card-note{color:var(--muted);font-size:12px;margin-top:5px}
+    .section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.section-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .field-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .field-grid.five{grid-template-columns:repeat(5,minmax(0,1fr))}.field-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+    label{display:block;color:#415168;font-size:12px;font-weight:800;margin-bottom:5px}
+    input[type="number"],select{width:100%;border:1px solid #bcc6d4;border-radius:8px;background:#fff;color:var(--ink);padding:9px 10px;outline:none}
+    input[type="number"]:focus,select:focus,textarea:focus{border-color:#6c92c8;box-shadow:0 0 0 3px rgba(36,87,167,.12)}
+    input[type="range"]{width:100%;accent-color:var(--blue)}
+    textarea{width:100%;min-height:112px;resize:vertical;border:1px solid #bcc6d4;border-radius:9px;padding:10px 11px;background:#fff;color:#172033;font-family:"D2Coding","Consolas",monospace;font-size:12px;outline:none}
+    .seg{display:inline-flex;flex-wrap:wrap;gap:4px;background:#edf0f4;border-radius:9px;padding:4px}
+    .seg button{border:0;background:transparent;color:#596579;border-radius:7px;padding:7px 11px;font-size:12px;font-weight:800}
+    .seg button.active{background:#fff;color:var(--blue-dark);box-shadow:0 1px 4px rgba(20,34,54,.12)}
+    .btn{border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;padding:9px 13px;font-weight:800}
+    .btn:hover{background:var(--blue-dark)}.btn.secondary{background:#fff;color:var(--blue);border-color:#9eb4d3}.btn.danger{background:#fff;color:var(--red);border-color:#e0a49e}
+    .btn.small{padding:6px 9px;font-size:11px}.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .upload{display:inline-flex;align-items:center;border:1px solid #aeb9c8;background:#fff;color:#35455c;border-radius:7px;padding:6px 9px;font-size:11px;font-weight:800;cursor:pointer}
+    .upload:hover{background:#f2f5f8}.file-input{display:none}
+    .status{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900;white-space:nowrap}
+    .status.actual{background:var(--green-soft);color:var(--green)}.status.estimated{background:var(--orange-soft);color:var(--orange)}.status.empty{background:var(--gray-soft);color:var(--gray)}
+    .input-box{border:1px solid var(--line);border-radius:10px;padding:13px;background:#fbfcfd}.input-title{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px;font-weight:900}
+    .mode-block{margin-top:12px}.hidden{display:none!important}
+    dialog{width:min(420px,calc(100% - 32px));border:1px solid var(--line);border-radius:12px;padding:0;box-shadow:0 20px 50px rgba(15,23,42,.18)}dialog::backdrop{background:rgba(15,23,42,.45)}.dialog-body{padding:20px}.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+    .notice{border-radius:9px;padding:11px 12px;font-size:12px;margin-top:11px}.notice.info{background:#edf4fd;border:1px solid #bed2ed;color:#254e82}.notice.warn{background:var(--orange-soft);border:1px solid #e8b77f;color:#834207}.notice.bad{background:var(--red-soft);border:1px solid #e3aaa4;color:#8e241b}.notice.ok{background:var(--green-soft);border:1px solid #a9d7bd;color:#17663f}
+    details.card>summary{list-style:none;cursor:pointer;padding:15px 18px;font-weight:900;background:var(--surface-2);border-bottom:1px solid transparent}details.card[open]>summary{border-bottom-color:var(--line)}details.card>summary::-webkit-details-marker{display:none}details.card>summary::after{content:'＋';float:right;color:var(--blue)}details.card[open]>summary::after{content:'－'}
+    .weight-total{font-weight:900}.weight-total.bad{color:var(--red)}.weight-total.ok{color:var(--green)}
+    .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}.kpi{border:1px solid var(--line);border-radius:10px;padding:13px;background:#fff}.kpi .label{font-size:11px;color:var(--muted);font-weight:800}.kpi .value{font-size:22px;font-weight:950;margin-top:4px;color:#172b49}.kpi .detail{font-size:11px;color:var(--muted);margin-top:3px}
+    .distribution{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px}.dist-card{border:1px solid var(--line);border-left:5px solid var(--grade);border-radius:9px;padding:11px;background:#fff}.dist-card .grade{font-weight:950;color:var(--grade)}.dist-card .count{font-size:20px;font-weight:950}.bar{height:6px;background:#e8ecf1;border-radius:99px;overflow:hidden;margin-top:7px}.bar span{display:block;height:100%;background:var(--grade)}
+    .gA{--grade:var(--a)}.gB{--grade:var(--b)}.gC{--grade:var(--c)}.gD{--grade:var(--d)}.gE{--grade:var(--e)}.gI{--grade:var(--i)}
+    .grade-badge{display:inline-flex;min-width:30px;justify-content:center;border-radius:999px;padding:3px 8px;background:var(--grade);color:#fff;font-size:11px;font-weight:950}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:9px;background:#fff}.table-wrap.tall{max-height:640px}
+    table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px}th{position:sticky;top:0;z-index:1;background:#263b57;color:#fff;padding:9px 8px;white-space:nowrap;text-align:center}td{padding:8px;border-bottom:1px solid #e8ecf1;text-align:center;white-space:nowrap}tbody tr:last-child td{border-bottom:0}tbody tr:hover td{background:#f2f6fb}.student-row{border-left:4px solid var(--grade)}.student-row td:first-child{border-left:4px solid var(--grade)}
+    .boundary-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.boundary-tabs button{border:1px solid #aeb9c8;background:#fff;color:#40516a;border-radius:8px;padding:7px 10px;font-weight:800}.boundary-tabs button.active{background:var(--blue);border-color:var(--blue);color:#fff}
+    .boundary-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:11px}.metric{border:1px solid var(--line);border-radius:8px;padding:9px;background:#f9fafb}.metric b{display:block;font-size:16px}.metric span{font-size:10px;color:var(--muted)}
+    .density{color:var(--orange);font-weight:900}.source-summary{display:flex;gap:8px;flex-wrap:wrap}.source-item{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;font-size:12px}
+    .cut-results{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.cut-result{border:1px solid #b9c7d9;border-radius:9px;padding:12px;text-align:center;background:#f7f9fc}.cut-result b{display:block;font-size:23px;color:var(--blue-dark)}
+    .item-table input,.item-table select{min-width:80px;padding:6px}.item-table td{padding:5px}
+    .rate-select{min-width:70px;padding:6px!important}.rate-invalid{border-color:var(--red)!important;background:var(--red-soft)!important;box-shadow:0 0 0 2px rgba(180,35,24,.1)}.assessment-cut-table td:first-child{text-align:left;font-weight:800}.computed-cut{font-weight:900;color:var(--blue-dark)}
+    .inverse-card{border:1px solid #e2b36f;border-left:5px solid var(--orange);background:#fffaf2;border-radius:10px;padding:14px;margin-top:16px}.candidate{border:1px solid var(--line);border-radius:9px;background:#fff;padding:11px;margin-top:10px}.candidate.selected{border-color:var(--blue);box-shadow:0 0 0 2px rgba(36,87,167,.1)}
+    .purpose{border-left:4px solid var(--green);background:#f2f8f5;padding:12px 14px;border-radius:8px;margin-bottom:16px;color:#315846;font-size:13px}
+    .footer-note{color:var(--muted);font-size:11px;margin-top:12px}
+    @media(max-width:1050px){.section-grid,.section-grid.three{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.distribution{grid-template-columns:repeat(3,1fr)}.boundary-metrics{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:700px){.wrap{padding:18px 12px 40px}.hero{display:block}.version{display:inline-flex;margin-top:10px}.main-tabs{grid-template-columns:1fr}.field-grid,.field-grid.five,.field-grid.three{grid-template-columns:repeat(2,1fr)}.kpis,.distribution,.cut-results{grid-template-columns:1fr 1fr}.card-body{padding:13px}.card-head{padding:12px 13px}.boundary-metrics{grid-template-columns:1fr 1fr}}
   </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="hero">
+<main class="wrap">
+  <header class="hero">
     <div>
-      <h1>분할점수 산출컷 예측기</h1>
-      <p class="sub">엑셀에서 <b>가로=반, 세로=번호</b> 형태로 복사해 붙여넣으면 학생별 예상 총점과 A/B/C/D/E 구간을 자동으로 정렬·색칠합니다.<br>입력 점수는 <b>100점 만점 기준 원점수</b>를 권장하며, 2차지필은 <b>1차지필 + 난이도 보정</b> 방식으로 예측합니다.</p>
+      <h1>분할점수 산출컷 예측기 V2</h1>
+      <p class="sub">문항분석 및 현재까지의 성적 자료를 바탕으로 학기말 성취도 분포를 사전에 예측하는 참고 도구입니다. 분할점수의 최종 결정은 평가 문항의 성취수준과 학교 학업성적관리 기준을 종합하여 판단해야 합니다.</p>
     </div>
-    <div class="pill">📊 첨부 엑셀 ‘산출총점_예상’ 구조 반영</div>
-  </div>
+    <span class="version">브라우저 내부 처리</span>
+  </header>
 
-  <div class="security-box">
+  <section class="privacy">
     <b>🔒 개인정보 보호 안내</b>
-    <ul>
-      <li>성적 자료는 이 화면에서만 계산되며 외부로 전송되지 않습니다.</li>
-      <li>선택한 엑셀 파일은 사용자의 브라우저에서만 읽습니다.</li>
-      <li>공용 PC 사용 후에는 전체 초기화를 누르거나 창을 닫아 주세요.</li>
-      <li>CSV로 내려받은 결과 파일은 학교 보안 저장소에 보관해 주세요.</li>
-      <li><a href="./privacy.html" target="_blank" rel="noopener noreferrer">개인정보처리방침 보기</a></li>
-    </ul>
-  </div>
+    입력하거나 선택한 성적 자료는 사용자의 브라우저에서만 처리되며 외부로 전송되지 않습니다. 공용 PC에서는 사용 후 전체 초기화 또는 창 닫기를 권장합니다. 내려받은 결과 파일은 학교의 개인정보 보호 기준에 따라 관리해 주세요. <a href="./privacy.html" target="_blank" rel="noopener noreferrer">개인정보처리방침</a>
+  </section>
 
-  <div class="grid">
+  <nav class="main-tabs" aria-label="주요 기능">
+    <button class="tab-btn" data-panel="cutPanel">지필평가 분할점수 산출</button>
+    <button class="tab-btn active" data-panel="semesterPanel">학기말 성취도 예측</button>
+  </nav>
+
+  <section class="card" style="margin-bottom:18px">
+    <div class="card-body" style="display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap">
+      <div><b>미이수(I) 기준 반영</b><p class="card-note">1학년 등 최소성취수준의 E/I 경계가 필요한 과목에서만 포함하세요. 불포함 시 E/I 관련 입력은 사용하지 않습니다.</p></div>
+      <div class="seg" id="iModeSwitch" aria-label="미이수 I 반영 여부"><button class="active" data-i-mode="off">불포함</button><button data-i-mode="on">포함</button></div>
+    </div>
+  </section>
+
+  <section id="cutPanel" class="panel">
+    <div class="purpose">간편공식산출은 6개 문항범주의 배점합을 직접 입력하고, 변형 Ebel 공식산출은 문항별 입력을 같은 범주로 자동 집계합니다. 두 방식은 동일한 예상정답률 표와 계산엔진을 사용합니다.</div>
     <div class="card">
-      <div class="card-h">
-        <h2>1. 성적 입력하기</h2>
-        <div class="btns">
-          <button class="ghost" id="clearTextBtn">입력칸 전체 비우기</button>
-          <button class="warn" id="fullResetBtn">전체 초기화</button>
-        </div>
+      <div class="card-head">
+        <div><h2>지필평가 분할점수 산출</h2><p class="card-note">필요할 때 독립적으로 사용하는 분할점수 계산 도구입니다. 학기말 예측 화면과 자동 연결하지 않습니다.</p></div>
       </div>
-      <div class="card-b">
-        <div class="paste-grid">
-          <div class="paste-box">
-            <div class="paste-title">
-              <span>1차지필</span>
-              <div class="paste-actions">
-                <label class="upload-label" for="fileExam1">📂 엑셀 업로드</label>
-                <input type="file" id="fileExam1" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileUpload(this,'exam1Text','statusExam1')">
-                <button class="del-sm" onclick="clearSingleInput('exam1Text','statusExam1')">삭제</button>
-                <span class="small" id="statusExam1">대기</span>
-              </div>
-            </div>
-            <textarea id="exam1Text" placeholder="번호&#9;1반&#9;2반&#9;3반 ...&#10;1&#9;51.8&#9;13.1&#9;27.1 ..."></textarea>
-          </div>
-          <div class="paste-box">
-            <div class="paste-title">
-              <span>1차 수행평가</span>
-              <div class="paste-actions">
-                <label class="upload-label" for="fileWriting1">📂 엑셀 업로드</label>
-                <input type="file" id="fileWriting1" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileUpload(this,'writing1Text','statusWriting1')">
-                <button class="del-sm" onclick="clearSingleInput('writing1Text','statusWriting1')">삭제</button>
-                <span class="small" id="statusWriting1">대기</span>
-              </div>
-            </div>
-            <textarea id="writing1Text" placeholder="번호&#9;1반&#9;2반&#9;3반 ...&#10;1&#9;88&#9;80&#9;92 ..."></textarea>
-          </div>
-          <div class="paste-box">
-            <div class="paste-title">
-              <span>2차 수행평가</span>
-              <div class="paste-actions">
-                <label class="upload-label" for="fileWriting2">📂 엑셀 업로드</label>
-                <input type="file" id="fileWriting2" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileUpload(this,'writing2Text','statusWriting2')">
-                <button class="del-sm" onclick="clearSingleInput('writing2Text','statusWriting2')">삭제</button>
-                <span class="small" id="statusWriting2">대기</span>
-              </div>
-            </div>
-            <textarea id="writing2Text" placeholder="번호&#9;1반&#9;2반&#9;3반 ...&#10;1&#9;92&#9;92&#9;90 ..."></textarea>
-          </div>
+      <div class="card-body">
+        <div class="field-grid three"><div><label>평가 만점</label><input id="cutAssessmentMax" type="number" value="100" min="0.1" step="0.1"></div><div style="grid-column:span 2"><label>산출 방식</label><div class="seg" id="cutMethod"><button class="active" data-cut-method="simple">간편공식산출</button><button data-cut-method="ebel">변형 Ebel 공식산출</button></div></div></div>
+        <div id="simpleMethod" class="mode-block">
+          <p class="card-note">문항 하나하나를 입력하지 않고 6개 문항범주의 배점합만 입력합니다.</p>
+          <div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>문항범주</th><th>배점합</th></tr></thead><tbody id="simplePointBody"></tbody></table></div>
         </div>
-        <p class="footnote">엑셀에서 표 범위를 잡아 Ctrl+C → 이 칸에 Ctrl+V 하거나, 엑셀 업로드 버튼으로 파일을 선택하면 됩니다. 파일은 서버에 업로드되지 않고 브라우저에서만 읽습니다. 맨 윗줄에 ‘번호, 1반, 2반…’이 있으면 가장 안정적으로 인식합니다.</p>
+        <div id="ebelMethod" class="mode-block hidden">
+          <p class="card-note">문항번호·배점·유형·난이도를 입력하면 6개 문항범주의 배점합으로 자동 집계합니다.</p>
+          <div class="actions" style="margin:10px 0"><button class="btn secondary small" id="addItemBtn">문항 추가</button><button class="btn secondary small" id="removeItemBtn">마지막 문항 삭제</button></div>
+          <div class="table-wrap"><table class="item-table"><thead><tr><th>문항번호</th><th>배점</th><th>유형</th><th>난이도</th></tr></thead><tbody id="itemBody"></tbody></table></div>
+          <h3 style="margin-top:16px">자동 집계된 문항범주별 배점합</h3><div id="categorySummary" class="source-summary"></div>
+        </div>
+        <div id="pointTotalNotice" class="notice info"></div>
+        <h3 style="margin-top:16px">성취수준별 예상정답률</h3><div class="table-wrap"><table><thead><tr><th>문항범주</th><th>배점합</th><th>A</th><th>B</th><th>C</th><th>D</th><th id="rateEHead">E</th></tr></thead><tbody id="rateBody"></tbody></table></div><div id="rateValidation" class="notice info">예상정답률을 선택해 주세요.</div>
+        <p class="card-note" style="margin-top:12px">추정분할점수 = Σ(문항범주 배점합 × 예상정답률 ÷ 100)</p>
+        <div class="cut-results" style="margin-top:10px"><div class="cut-result"><span>A/B 경계</span><b id="itemCutA">-</b></div><div class="cut-result"><span>B/C 경계</span><b id="itemCutB">-</b></div><div class="cut-result"><span>C/D 경계</span><b id="itemCutC">-</b></div><div class="cut-result"><span>D/E 경계</span><b id="itemCutD">-</b></div><div class="cut-result" id="itemCutEBox"><span>E/I 기준 · 최소성취수준</span><b id="itemCutE">미선택</b></div></div>
+        <p class="footer-note">이 산출 결과는 NEIS 입력·협의 참고용입니다. 학기말 예측에 자동 반영되지 않습니다.</p>
+        <div class="inverse-card"><h3>정답률 역산 보조</h3><p class="card-note">공식 분할점수 산출방식이 아니라 NEIS 예상정답률 입력을 편하게 하기 위한 보조기능입니다. 논리 제약과 자연스러움을 우선하여 최대 3개 후보를 제안합니다.</p><div class="field-grid five" style="margin-top:10px"><div><label>A/B 목표</label><input id="reverseA" type="number" value="72" step="0.1"></div><div><label>B/C 목표</label><input id="reverseB" type="number" value="59" step="0.1"></div><div><label>C/D 목표</label><input id="reverseC" type="number" value="46" step="0.1"></div><div><label>D/E 목표</label><input id="reverseD" type="number" value="33" step="0.1"></div><div id="reverseEWrap"><label>E/I 목표</label><input id="reverseE" type="number" value="" placeholder="미선택" step="0.1" disabled></div></div><div class="actions" style="margin-top:12px"><button class="btn" id="reverseBtn">자연스러운 후보 찾기</button></div><div id="reverseResult"></div></div>
       </div>
+    </div>
+  </section>
+
+  <section id="semesterPanel" class="panel active">
+    <div class="purpose">현재 확보된 실제 점수와 아직 확정되지 않은 평가요소의 예상값을 함께 사용해 학기말 분포를 살펴봅니다. 특정 비율을 강제로 맞추는 기능이 아닙니다.</div>
+
+    <details class="card" open><summary>1. 현재 확보된 평가요소의 만점·반영점수·분할점수</summary><div class="card-body">
+      <p class="card-note">2차 지필은 아직 실시 전이므로 만점과 반영점수만 입력합니다. A~D(E/I) 기준은 아래의 2차 지필 예상점수 방식에 따라 자동 추정되며 직접 입력할 수 없습니다.</p>
+      <div class="table-wrap" style="margin-top:10px"><table class="assessment-cut-table"><thead><tr><th>평가요소</th><th>만점</th><th>반영점수</th><th>A</th><th>B</th><th>C</th><th>D</th><th class="semester-e-col">E/I 기준</th></tr></thead><tbody>
+        <tr><td>1차 지필</td><td><input id="maxExam1" class="live" type="number" value="100" min="0.1" step="0.1"></td><td><input id="wExam1" class="live" type="number" value="30" step="0.1"></td><td><input id="acExam1A" class="live" type="number" value="70" step="0.1"></td><td><input id="acExam1B" class="live" type="number" value="57" step="0.1"></td><td><input id="acExam1C" class="live" type="number" value="42" step="0.1"></td><td><input id="acExam1D" class="live" type="number" value="30" step="0.1"></td><td class="semester-e-col"><input id="acExam1E" class="live" type="number" value="" data-i-default="15" placeholder="미선택" disabled step="0.1"></td></tr>
+        <tr><td><b>2차 지필</b><br><span class="status empty" id="exam2CutStatus">미산출</span></td><td><input id="maxExam2" class="live" type="number" value="100" min="0.1" step="0.1"></td><td><input id="wExam2" class="live" type="number" value="30" step="0.1"></td><td><input id="acExam2A" type="number" value="" placeholder="미산출" readonly></td><td><input id="acExam2B" type="number" value="" placeholder="미산출" readonly></td><td><input id="acExam2C" type="number" value="" placeholder="미산출" readonly></td><td><input id="acExam2D" type="number" value="" placeholder="미산출" readonly></td><td class="semester-e-col"><input id="acExam2E" type="number" value="" placeholder="미선택" readonly disabled></td></tr>
+        <tr><td>1차 수행</td><td><input id="maxPerf1" class="live" type="number" value="100" min="0.1" step="0.1"></td><td><input id="wPerf1" class="live" type="number" value="20" step="0.1"></td><td><input id="acPerf1A" class="live" type="number" value="80" step="0.1"></td><td><input id="acPerf1B" class="live" type="number" value="60" step="0.1"></td><td><input id="acPerf1C" class="live" type="number" value="40" step="0.1"></td><td><input id="acPerf1D" class="live" type="number" value="20" step="0.1"></td><td class="semester-e-col"><input id="acPerf1E" class="live" type="number" value="" data-i-default="0" placeholder="미선택" disabled step="0.1"></td></tr>
+        <tr><td>2차 수행</td><td><input id="maxPerf2" class="live" type="number" value="100" min="0.1" step="0.1"></td><td><input id="wPerf2" class="live" type="number" value="20" step="0.1"></td><td><input id="acPerf2A" class="live" type="number" value="80" step="0.1"></td><td><input id="acPerf2B" class="live" type="number" value="60" step="0.1"></td><td><input id="acPerf2C" class="live" type="number" value="40" step="0.1"></td><td><input id="acPerf2D" class="live" type="number" value="20" step="0.1"></td><td class="semester-e-col"><input id="acPerf2E" class="live" type="number" value="" data-i-default="0" placeholder="미선택" disabled step="0.1"></td></tr>
+      </tbody></table></div>
+      <div id="weightNotice" class="notice info"><span class="weight-total">반영점수 합계를 확인합니다.</span></div>
+      <p class="footer-note">2차 지필 A~D(E/I)는 1차 지필 기반 예상점수 변환을 같은 방식으로 적용하여 자동 추정합니다. 직접 입력값이 아닙니다.</p>
+    </div></details>
+
+    <details class="card" open><summary>2. 1차 지필 실제자료</summary><div class="card-body">
+      <div class="input-title"><span>1차 지필</span><span id="exam1Badge" class="status empty">미입력</span></div>
+      <div class="actions" style="margin-bottom:8px"><label class="upload" for="fileExam1">Excel/CSV 업로드</label><input class="file-input" type="file" id="fileExam1" accept=".xlsx,.xls,.csv"><button class="btn secondary small clear-input" data-target="exam1Text">입력 비우기</button><span id="statusExam1" class="card-note">대기</span></div>
+      <textarea id="exam1Text" class="score-text" placeholder="번호&#9;1반&#9;2반&#9;3반 ...&#10;1&#9;72&#9;63&#9;80 ..."></textarea>
+      <p class="footer-note">가로=반, 세로=번호 표 또는 반·번호 열이 있는 세로형 일람표를 지원합니다. 학생 식별키는 반-번호입니다.</p>
+    </div></details>
+
+    <div class="section-grid">
+      <details class="card" open><summary>3. 1차 수행평가</summary><div class="card-body">
+        <div class="input-title"><span>1차 수행</span><span id="perf1Badge" class="status empty">미입력</span></div>
+        <div class="seg mode-switch" data-component="perf1"><button class="active" data-mode="actual">실제자료</button><button data-mode="estimate">1차 지필 기반 예상</button></div>
+        <div id="perf1Actual" class="mode-block"><div class="actions" style="margin-bottom:8px"><label class="upload" for="filePerf1">Excel/CSV 업로드</label><input class="file-input" type="file" id="filePerf1" accept=".xlsx,.xls,.csv"><button class="btn secondary small clear-input" data-target="perf1Text">입력 비우기</button><span id="statusPerf1" class="card-note">대기</span></div><textarea id="perf1Text" class="score-text" placeholder="번호&#9;1반&#9;2반 ..."></textarea></div>
+        <div id="perf1Estimate" class="mode-block hidden"><div class="field-grid three"><div><label>예상 최저점</label><input id="perf1Min" class="live" type="number" value="70" step="0.1"></div><div><label>예상 최고점</label><input id="perf1Max" class="live" type="number" value="100" step="0.1"></div><div><label>예상 평균</label><input id="perf1Mean" class="live" type="number" value="88" step="0.1"></div></div><div style="margin-top:10px"><label>1차 지필 상대위치 반영</label><select id="perf1Strength" class="live"><option value="0.9">강함</option><option value="0.65" selected>보통</option><option value="0.4">약함</option></select></div><div class="notice warn">예상자료 · 동점 중간백분위를 수행평가 범위에 재배치하고 입력한 평균에 가깝게 보정합니다.</div></div>
+      </div></details>
+
+      <details class="card" open><summary>4. 2차 수행평가</summary><div class="card-body">
+        <div class="input-title"><span>2차 수행</span><span id="perf2Badge" class="status empty">미입력</span></div>
+        <div class="seg mode-switch" data-component="perf2"><button class="active" data-mode="actual">실제자료</button><button data-mode="estimate">1차 지필 기반 예상</button></div>
+        <div id="perf2Actual" class="mode-block"><div class="actions" style="margin-bottom:8px"><label class="upload" for="filePerf2">Excel/CSV 업로드</label><input class="file-input" type="file" id="filePerf2" accept=".xlsx,.xls,.csv"><button class="btn secondary small clear-input" data-target="perf2Text">입력 비우기</button><span id="statusPerf2" class="card-note">대기</span></div><textarea id="perf2Text" class="score-text" placeholder="번호&#9;1반&#9;2반 ..."></textarea></div>
+        <div id="perf2Estimate" class="mode-block hidden"><div class="field-grid three"><div><label>예상 최저점</label><input id="perf2Min" class="live" type="number" value="75" step="0.1"></div><div><label>예상 최고점</label><input id="perf2Max" class="live" type="number" value="100" step="0.1"></div><div><label>예상 평균</label><input id="perf2Mean" class="live" type="number" value="91" step="0.1"></div></div><div style="margin-top:10px"><label>1차 지필 상대위치 반영</label><select id="perf2Strength" class="live"><option value="0.9">강함</option><option value="0.65" selected>보통</option><option value="0.4">약함</option></select></div><div class="notice warn">예상자료 · 1차 수행과 독립된 범위·평균·반영 정도를 사용합니다.</div></div>
+      </div></details>
     </div>
 
-    <div class="card">
-      <div class="card-h">
-        <h2>2. 성취비율·반영비율·난이도</h2>
-        <div class="right-actions">
-          <button id="calcBtn">계산하기</button>
-          <button class="secondary" id="exportBtn">CSV 내보내기</button>
-        </div>
+    <details class="card" open><summary>5. 2차 지필 예상점수</summary><div class="card-body">
+      <div class="input-title"><span>1차 지필 실제점수 기반 자동 예상</span><span id="exam2Badge" class="status estimated">일괄 보정</span></div>
+      <p class="card-note">문항분석 여부와 관계없이 1차 지필 실제점수를 기준으로 학생별 2차 지필 예상점수를 만듭니다.</p>
+      <div class="seg mode-switch" data-component="exam2"><button class="active" data-mode="offset">일괄 + / -</button><button data-mode="linear">개별 선형 매핑</button></div>
+      <div id="exam2Offset" class="mode-block">
+        <div class="field-grid three"><div><label>일괄 보정점수</label><input id="exam2Delta" class="live" type="number" value="0" min="-30" max="30" step="1"></div><div style="grid-column:span 2"><label>1차 지필 대비 점수 변화 (-30 ~ +30)</label><input id="exam2DeltaRange" type="range" min="-30" max="30" step="1" value="0"></div></div>
+        <div id="deltaMeaning" class="notice info">0점: 1차 지필 점수를 그대로 2차 지필 예상점수로 사용합니다.</div>
       </div>
-      <div class="card-b">
-        <div class="settings">
-          <div class="section">
-            <h3>성취비율: 개별 비율 입력</h3>
-            <div class="input-grid cols4">
-              <div><label>A (%)</label><input type="number" id="pctA" value="20" min="0" max="100" step="0.1"></div>
-              <div><label>B (%)</label><input type="number" id="pctB" value="30" min="0" max="100" step="0.1"></div>
-              <div><label>C (%)</label><input type="number" id="pctC" value="30" min="0" max="100" step="0.1"></div>
-              <div><label>D (%)</label><input type="number" id="pctD" value="15" min="0" max="100" step="0.1"></div>
-            </div>
-            <p class="footnote">예: A 20, B 30, C 30, D 15 → 누적 20%, 50%, 80%, 95%, 100%</p>
-          </div>
-          <div class="section">
-            <h3>반영비율</h3>
-            <div class="input-grid cols4">
-              <div><label>1차지필</label><input type="number" id="wExam1" value="30" step="0.1"></div>
-              <div><label>2차지필</label><input type="number" id="wExam2" value="30" step="0.1"></div>
-              <div><label>1차수행</label><input type="number" id="wWriting1" value="20" step="0.1"></div>
-              <div><label>2차수행</label><input type="number" id="wWriting2" value="20" step="0.1"></div>
-            </div>
-            <p class="footnote">기본값은 첨부파일처럼 30:30:20:20입니다.</p>
-          </div>
-          <div class="section">
-            <h3>2차지필 난이도 보정</h3>
-            <div class="input-grid">
-              <div><label>보정점수 (+/−)</label><input type="number" id="deltaExam2" value="0" step="0.1"></div>
-              <div><label>현재 예측식</label><input type="number" id="dummy" value="0" disabled style="display:none"><div class="notice ok" style="margin:0;padding:9px 11px;">2차지필 = 1차지필 + 보정점수</div></div>
-            </div>
-            <input type="range" id="deltaRange" min="-30" max="30" step="1" value="0" aria-label="2차지필 보정 슬라이더">
-            <p class="footnote">예: -5는 2차지필이 1차지필보다 평균적으로 5점 어렵다고 보는 설정입니다.</p>
-          </div>
-          <div class="section">
-            <h3>계산 기준</h3>
-            <div id="calcInfo" class="notice">아직 계산 전입니다. 엑셀 자료를 붙여넣거나 파일을 선택해 주세요.</div>
-            <div id="missingInfo" class="notice missing hide"></div>
-          </div>
-        </div>
+      <div id="exam2Linear" class="mode-block hidden">
+        <div class="field-grid three"><div><label>2차 예상 최저점</label><input id="exam2LinearMin" class="live" type="number" value="40" min="0" max="100" step="0.1"></div><div><label>2차 예상 최고점</label><input id="exam2LinearMax" class="live" type="number" value="100" min="0" max="100" step="0.1"></div><div><label>매핑 방식</label><div class="notice info" style="margin-top:0;padding:9px 10px">1차 실제 최저~최고 → 2차 예상 최저~최고</div></div></div>
+        <div class="notice warn">학생의 1차 지필 상대 위치를 유지한 채 2차 예상 범위에 선형으로 재배치합니다.</div>
       </div>
-    </div>
-  </div>
+      <div id="exam2Preview" class="notice info">1차 지필 실제자료를 입력하면 예상점수 범위를 바로 표시합니다.</div>
+    </div></details>
 
-  <div class="summary" id="summaryCards"></div>
+    <details class="card" open><summary>6. 학기말 분할점수 자동 산출</summary><div class="card-body">
+      <p class="card-note">학기말 분할점수(L) = Σ[(평가별 분할점수(L) ÷ 평가 만점) × 평가 반영점수]</p>
+      <div class="cut-results" id="semesterCutResults"><div class="cut-result"><span>A 이상</span><b id="semCutA">-</b></div><div class="cut-result"><span>B 이상</span><b id="semCutB">-</b></div><div class="cut-result"><span>C 이상</span><b id="semCutC">-</b></div><div class="cut-result"><span>D 이상</span><b id="semCutD">-</b></div><div class="cut-result"><span>E/I 기준</span><b id="semCutE">-</b></div></div>
+      <div style="max-width:240px;margin-top:12px"><label>A 참고비율 (%)</label><input id="targetARate" class="live" type="number" value="23" step="0.1"></div>
+      <div id="cutValidation" class="notice ok">학생 순위가 아니라 평가요소별 분할점수를 반영점수 척도로 환산해 자동 산출합니다.</div>
+    </div></details>
 
-  <div class="scenario-wrap">
-    <div class="card">
-      <div class="card-h"><h2>3. 경계별 산출컷 예상</h2></div>
-      <div class="card-b">
-        <div class="table-wrap" style="max-height:none;">
-          <table class="cut-table" id="cutTable">
-            <thead><tr><th>경계</th><th>누적 인원</th><th>1차지필</th><th>2차지필 예상</th><th>1차수행</th><th>2차수행</th><th>총점컷</th><th>중간컷</th></tr></thead>
-            <tbody><tr><td colspan="8">자료를 넣고 계산해 주세요.</td></tr></tbody>
-          </table>
-        </div>
-        <p class="footnote">총점컷은 해당 등급에 포함되는 마지막 학생의 총점입니다. 중간컷은 그 학생과 바로 다음 학생의 평균으로, 실제 분할점수 설정 시 참고용입니다. 실제 나이스 합산, 소수점 처리, 동점자 처리 기준은 학교 학업성적관리규정에 따라 달라질 수 있습니다.</p>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-h"><h2>4. 난이도 시나리오</h2></div>
-      <div class="card-b">
-        <div class="table-wrap" style="max-height:none;">
-          <table id="scenarioTable">
-            <thead><tr><th>2차지필 보정</th><th>A컷</th><th>B컷</th><th>C컷</th><th>D컷</th><th>평균</th></tr></thead>
-            <tbody><tr><td colspan="6">자료를 넣고 계산해 주세요.</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
+    <div class="card" id="resultsCard"><div class="card-head"><div><h2>핵심 결과</h2><p class="card-note">분할점수를 바꾸면 약 350ms 후 자동 갱신됩니다.</p></div><div class="actions"><button class="btn" id="calculateBtn">지금 계산</button><button class="btn secondary" id="exportBtn">CSV 내보내기</button><button class="btn danger" id="resetBtn">전체 초기화</button></div></div><div class="card-body">
+      <div id="resultNotice" class="notice info">1차 지필 실제자료를 입력해 주세요.</div>
+      <div id="kpiCards" class="kpis" style="margin-top:13px"></div>
+      <div id="distribution" class="distribution"></div>
+      <div style="margin-top:14px"><h3>예측자료 구성</h3><div id="sourceSummary" class="source-summary"></div></div>
+    </div></div>
 
-  <div class="card" style="margin-top:18px;">
-    <div class="card-h">
-      <h2>5. 학생별 예상 총점 정렬표</h2>
-      <div class="small" id="rowCountInfo">0명</div>
-    </div>
-    <div class="card-b">
-      <div class="table-wrap">
-        <table id="studentTable">
-          <thead><tr><th>석차</th><th>성취</th><th>반</th><th>번호</th><th>1차지필</th><th>2차지필 예상</th><th>1차수행</th><th>2차수행</th><th>예상 총점</th></tr></thead>
-          <tbody><tr><td colspan="9">엑셀 자료를 붙여넣거나 파일을 선택해 주세요.</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
+    <div id="missingCard" class="card hidden"><div class="card-head"><h2>누락학생 안내</h2></div><div class="card-body"><div id="missingNotice" class="notice warn"></div></div></div>
+
+    <div class="card"><div class="card-head"><div><h2>경계 학생 집중 분석</h2><p class="card-note">선택한 분할점수 전후 학생과 점수 밀집도를 표시합니다.</p></div></div><div class="card-body"><div id="boundaryTabs" class="boundary-tabs"></div><div id="boundaryMetrics" class="boundary-metrics"></div><div class="table-wrap"><table><thead><tr><th>석차</th><th>반</th><th>번호</th><th>학기말 예상총점</th><th>성취도</th><th>경계와 차이</th></tr></thead><tbody id="boundaryBody"><tr><td colspan="6">계산할 자료가 없습니다.</td></tr></tbody></table></div></div></div>
+
+    <div class="card"><div class="card-head"><div><h2>전체 학생 학기말 예상총점 정렬표</h2><p class="card-note">예상자료 열에는 자료상태가 함께 표시됩니다.</p></div><span id="rowCount" class="status empty">0명</span></div><div class="card-body"><div class="table-wrap tall"><table id="studentTable"><thead><tr><th>석차</th><th>성취도</th><th>반</th><th>번호</th><th>1차 지필</th><th>2차 지필(예상)</th><th>1차 수행</th><th>2차 수행</th><th>학기말 예상총점</th></tr></thead><tbody id="studentBody"><tr><td colspan="9">1차 지필 실제자료를 입력해 주세요.</td></tr></tbody></table></div><p class="footer-note">실제 NEIS 합산점수 및 소수점 처리 방식은 학교 학업성적관리규정에 따라 다를 수 있으므로 본 결과는 사전 예측 및 협의 참고용입니다.</p></div></div>
+
+    <div class="card"><div class="card-head"><div><h2>2차 지필 조건 민감도 분석</h2><p class="card-note">현재 예상조건에서 점수가 ±2, ±4점 달라질 때의 결과입니다. +는 학생 예상점수 상승, -는 하락을 뜻합니다.</p></div></div><div class="card-body"><div class="table-wrap"><table><thead><tr><th>2차 지필 조건</th><th>A 인원</th><th>A 비율</th><th>A 최저 / B 최고</th><th>A/B 관측 경계</th></tr></thead><tbody id="sensitivityBody"><tr><td colspan="5">계산할 자료가 없습니다.</td></tr></tbody></table></div></div></div>
+  </section>
+</main>
+<dialog id="sheetDialog" aria-labelledby="sheetDialogTitle"><form method="dialog" class="dialog-body"><h2 id="sheetDialogTitle">사용할 시트 선택</h2><p class="card-note">성적표가 있는 시트를 선택해 주세요.</p><label for="sheetSelect">시트</label><select id="sheetSelect"></select><div class="dialog-actions"><button class="btn secondary" value="cancel">취소</button><button class="btn" value="confirm">선택</button></div></form></dialog>
 
 <script src="./xlsx.full.min.js"></script>
-<script>if(typeof XLSX==='undefined'){document.write('<script src="./xlsx_full.min.js"><\/script>');}</script>
 <script>
-const $ = (id) => document.getElementById(id);
-const els = {
-  exam1Text: $('exam1Text'), writing1Text: $('writing1Text'), writing2Text: $('writing2Text'),
-  pctA: $('pctA'), pctB: $('pctB'), pctC: $('pctC'), pctD: $('pctD'),
-  wExam1: $('wExam1'), wExam2: $('wExam2'), wWriting1: $('wWriting1'), wWriting2: $('wWriting2'),
-  deltaExam2: $('deltaExam2'), deltaRange: $('deltaRange'), calcInfo: $('calcInfo'),
-  summaryCards: $('summaryCards'), cutTable: $('cutTable'), scenarioTable: $('scenarioTable'), studentTable: $('studentTable'), rowCountInfo: $('rowCountInfo')
-};
-let lastRows = [];
-
-function toNum(x){
-  if (x === null || x === undefined) return null;
-  const s = String(x).trim().replace(/,/g,'').replace(/%$/,'');
-  if (s === '') return null;
-  const n = Number(s);
-  return Number.isFinite(n) ? n : null;
+// ── 유틸 ──────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const clamp = (n,min=0,max=100) => Math.max(min,Math.min(max,n));
+function toNum(value){
+  if(value===null||value===undefined) return null;
+  const text=String(value).trim().replace(/,/g,'').replace(/%$/,'');
+  if(!text) return null;
+  const number=Number(text);
+  return Number.isFinite(number)?number:null;
 }
-function fmt(n, d=2){
-  if (n === null || n === undefined || Number.isNaN(n)) return '';
-  const v = Number(n);
-  return Number.isInteger(v) ? String(v) : v.toFixed(d).replace(/\.00$/,'').replace(/(\.\d)0$/,'$1');
+function fmt(value,digits=2){
+  if(value===null||value===undefined||Number.isNaN(Number(value))) return '-';
+  const n=Number(value);
+  return n.toFixed(digits).replace(/\.00$/,'').replace(/(\.\d)0$/,'$1');
 }
-function clamp(n,min=0,max=100){ return Math.max(min, Math.min(max, n)); }
-function esc(s){ return String(s ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function esc(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function debounce(fn,delay=350){let timer;return(...args)=>{clearTimeout(timer);timer=setTimeout(()=>fn(...args),delay);};}
+function validDescending(cuts,max=100,useI=false){return cuts.A>cuts.B&&cuts.B>cuts.C&&cuts.C>cuts.D&&(!useI||cuts.D>cuts.E&&cuts.E>=0)&&cuts.D>=0&&cuts.A<=max;}
+function getAssessmentCuts(prefix){return Object.fromEntries(LEVELS.map(level=>[level,toNum($('ac'+prefix+level)?.value)]));}
 
-function splitLine(line){
-  if (line.includes('\t')) return line.split('\t');
-  if (line.includes(',')) return line.split(',');
-  return line.trim().split(/\s+/);
-}
+const LEVELS=['A','B','C','D','E'];
+const CATEGORIES=[{key:'choice_easy',label:'선택형 쉬움',type:'choice',difficulty:'easy'},{key:'choice_normal',label:'선택형 보통',type:'choice',difficulty:'normal'},{key:'choice_hard',label:'선택형 어려움',type:'choice',difficulty:'hard'},{key:'written_easy',label:'서답형 쉬움',type:'written',difficulty:'easy'},{key:'written_normal',label:'서답형 보통',type:'written',difficulty:'normal'},{key:'written_hard',label:'서답형 어려움',type:'written',difficulty:'hard'}];
+const DEFAULT_SIMPLE_POINTS={choice_easy:8,choice_normal:24,choice_hard:30,written_easy:8,written_normal:12,written_hard:18};
+function blankRates(){return Object.fromEntries(LEVELS.map(level=>[level,Object.fromEntries(CATEGORIES.map(c=>[c.key,null]))]));}
+function newCutExam(){return{method:'simple',simplePoints:{...DEFAULT_SIMPLE_POINTS},items:Array.from({length:10},(_,i)=>({number:i+1,point:10,type:i<5?'choice':'written',difficulty:['easy','normal','hard'][i%3]})),rates:blankRates(),candidates:[],selectedCandidate:0};}
+const state={modes:{perf1:'actual',perf2:'actual',exam2:'offset'},includeI:false,rows:[],missing:[],boundary:'AB',cutExam:newCutExam(),itemCuts:{A:null,B:null,C:null,D:null,E:null}};
+function activeLevels(){return state.includeI?LEVELS:LEVELS.slice(0,4);}
+function activeCutExam(){return state.cutExam;}
 
+// ── 데이터 입력/파싱 ──────────────────────────────────────────────────
+function splitLine(line){if(line.includes('\t'))return line.split('\t');if(line.includes(','))return line.split(',');return line.trim().split(/\s+/);}
 function parseScoreTable(text){
-  const lines = (text || '').split(/\r?\n/).map(l => l.trimEnd()).filter(l => l.trim() !== '');
-  if (!lines.length) return {map:new Map(), rows:0, warning:'빈 입력'};
-  let raw = lines.map(splitLine);
-  const maxCols = Math.max(...raw.map(r => r.length));
-  raw = raw.map(r => Array.from({length:maxCols}, (_,i)=> r[i] ?? ''));
-
-  const first = raw[0].map(c => String(c).trim());
-  const hasHeader = first.some(c => /반|번호|학번|No\.?/i.test(c));
-  let classLabels = [];
-  let dataStart = 0;
-  let hasNumberCol = true;
-
-  if (hasHeader) {
-    dataStart = 1;
-    hasNumberCol = /번호|학번|no\.?|^$/i.test(first[0]) || toNum(first[0]) === null;
-    const startCol = hasNumberCol ? 1 : 0;
-    for (let c=startCol; c<maxCols; c++) {
-      const label = first[c] || `${c-startCol+1}반`;
-      const m = String(label).match(/(\d+)/);
-      classLabels.push(m ? Number(m[1]) : (c-startCol+1));
-    }
-  } else {
-    const firstColNums = raw.slice(0, Math.min(raw.length, 5)).map(r => toNum(r[0])).filter(v => v !== null);
-    hasNumberCol = firstColNums.length >= Math.min(raw.length, 3);
-    const startCol = hasNumberCol ? 1 : 0;
-    for (let c=startCol; c<maxCols; c++) classLabels.push(c-startCol+1);
+  const lines=(text||'').split(/\r?\n/).map(line=>line.trimEnd()).filter(line=>line.trim()!=='');
+  if(!lines.length)return{map:new Map(),rows:0,warning:'빈 입력'};
+  let raw=lines.map(splitLine);const maxCols=Math.max(...raw.map(row=>row.length));
+  raw=raw.map(row=>Array.from({length:maxCols},(_,i)=>row[i]??''));
+  const first=raw[0].map(cell=>String(cell).trim());
+  const verticalClass=first.findIndex(cell=>/^(반|학급|학반)$/i.test(cell));
+  const verticalNumber=first.findIndex(cell=>/^(번호|학번|no\.?)$/i.test(cell));
+  const verticalScore=first.findIndex(cell=>/^(점수|원점수|총점|성적)$/i.test(cell));
+  if(verticalClass!==-1&&verticalNumber!==-1&&verticalScore!==-1){
+    const map=new Map();let used=0;
+    for(let r=1;r<raw.length;r++){const classNo=toNum(raw[r][verticalClass]),number=toNum(raw[r][verticalNumber]),score=toNum(raw[r][verticalScore]);if(classNo===null||number===null||score===null)continue;map.set(`${classNo}-${number}`,{classNo,number,score});used++;}
+    return{map,rows:used,warning:used?'':'숫자 자료를 찾지 못함'};
   }
-
-  const map = new Map();
-  let used = 0;
-  for (let r=dataStart; r<raw.length; r++) {
-    const row = raw[r];
-    const number = hasNumberCol ? toNum(row[0]) : (r-dataStart+1);
-    if (number === null) continue;
-    const startCol = hasNumberCol ? 1 : 0;
-    for (let c=startCol; c<maxCols; c++) {
-      const val = toNum(row[c]);
-      if (val === null) continue;
-      const classNo = classLabels[c-startCol] ?? (c-startCol+1);
-      const key = `${classNo}-${number}`;
-      map.set(key, {classNo, number, score:val});
-      used++;
-    }
-  }
-  return {map, rows:used, warning: used ? '' : '숫자 자료를 찾지 못함'};
+  const hasHeader=first.some(cell=>/반|번호|학번|No\.?/i.test(cell));
+  let classLabels=[],dataStart=0,hasNumberCol=true;
+  if(hasHeader){dataStart=1;hasNumberCol=/번호|학번|no\.?|^$/i.test(first[0])||toNum(first[0])===null;const start=hasNumberCol?1:0;for(let c=start;c<maxCols;c++){const label=first[c]||`${c-start+1}반`;const match=String(label).match(/(\d+)/);classLabels.push(match?Number(match[1]):c-start+1);}}
+  else{const nums=raw.slice(0,Math.min(raw.length,5)).map(row=>toNum(row[0])).filter(v=>v!==null);hasNumberCol=nums.length>=Math.min(raw.length,3);const start=hasNumberCol?1:0;for(let c=start;c<maxCols;c++)classLabels.push(c-start+1);}
+  const map=new Map();let used=0;
+  for(let r=dataStart;r<raw.length;r++){const row=raw[r];const number=hasNumberCol?toNum(row[0]):r-dataStart+1;if(number===null)continue;const start=hasNumberCol?1:0;for(let c=start;c<maxCols;c++){const score=toNum(row[c]);if(score===null)continue;const classNo=classLabels[c-start]??c-start+1;map.set(`${classNo}-${number}`,{classNo,number,score});used++;}}
+  return{map,rows:used,warning:used?'':'숫자 자료를 찾지 못함'};
 }
-
-function readConfig(){
-  const pctA = toNum(els.pctA.value) ?? 0, pctB = toNum(els.pctB.value) ?? 0, pctC = toNum(els.pctC.value) ?? 0, pctD = toNum(els.pctD.value) ?? 0;
-  const weights = {
-    exam1: toNum(els.wExam1.value) ?? 0,
-    exam2: toNum(els.wExam2.value) ?? 0,
-    writing1: toNum(els.wWriting1.value) ?? 0,
-    writing2: toNum(els.wWriting2.value) ?? 0,
-  };
-  const delta = toNum(els.deltaExam2.value) ?? 0;
-  return {pctA,pctB,pctC,pctD,weights,delta};
-}
-
-function buildRows(deltaOverride=null){
-  const p1 = parseScoreTable(els.exam1Text.value);
-  const p2 = parseScoreTable(els.writing1Text.value);
-  const p3 = parseScoreTable(els.writing2Text.value);
-  $('statusExam1').textContent = p1.rows ? `${p1.rows}개 점수 인식` : p1.warning;
-  $('statusWriting1').textContent = p2.rows ? `${p2.rows}개 점수 인식` : p2.warning;
-  $('statusWriting2').textContent = p3.rows ? `${p3.rows}개 점수 인식` : p3.warning;
-
-  const cfg = readConfig();
-  const delta = deltaOverride ?? cfg.delta;
-  const keys = new Set([...p1.map.keys(), ...p2.map.keys(), ...p3.map.keys()]);
-  const rows = [];
-  const missing = [];
-  keys.forEach(key => {
-    const a = p1.map.get(key), b = p2.map.get(key), c = p3.map.get(key);
-    if (!a || !b || !c) {
-      const base = a || b || c || {};
-      const [fallbackClass, fallbackNumber] = String(key).split('-');
-      const missingItems = [];
-      if (!a) missingItems.push('1차지필');
-      if (!b) missingItems.push('1차수행');
-      if (!c) missingItems.push('2차수행');
-      missing.push({
-        key,
-        classNo: base.classNo ?? fallbackClass ?? '',
-        number: base.number ?? fallbackNumber ?? '',
-        missingItems
-      });
-      return;
-    }
-    const exam1 = a.score;
-    const exam2 = clamp(exam1 + delta);
-    const total = (exam1*cfg.weights.exam1 + exam2*cfg.weights.exam2 + b.score*cfg.weights.writing1 + c.score*cfg.weights.writing2)/100;
-    rows.push({key, classNo:a.classNo, number:a.number, exam1, exam2, writing1:b.score, writing2:c.score, total:Math.round(total*1000)/1000});
-  });
-  rows.sort((x,y) => y.total - x.total || y.exam1 - x.exam1 || x.classNo-y.classNo || x.number-y.number);
-  missing.sort((x,y) => Number(x.classNo)-Number(y.classNo) || Number(x.number)-Number(y.number));
-  return {rows, cfg, parsed:[p1,p2,p3], missingCount:missing.length, missing};
-}
-
-function cumulativeCounts(n, cfg){
-  const totalPct = cfg.pctA + cfg.pctB + cfg.pctC + cfg.pctD;
-  const cumA = Math.min(n, Math.ceil(n * cfg.pctA / 100));
-  const cumB = Math.min(n, Math.ceil(n * (cfg.pctA + cfg.pctB) / 100));
-  const cumC = Math.min(n, Math.ceil(n * (cfg.pctA + cfg.pctB + cfg.pctC) / 100));
-  const cumD = Math.min(n, Math.ceil(n * totalPct / 100));
-  return {cumA,cumB,cumC,cumD, counts:{A:cumA, B:Math.max(0,cumB-cumA), C:Math.max(0,cumC-cumB), D:Math.max(0,cumD-cumC), E:Math.max(0,n-cumD)}, totalPct};
-}
-function gradeForRank(rank, cuts){
-  if (rank <= cuts.cumA) return 'A';
-  if (rank <= cuts.cumB) return 'B';
-  if (rank <= cuts.cumC) return 'C';
-  if (rank <= cuts.cumD) return 'D';
-  return 'E';
-}
-function getBoundary(rows, rank){
-  if (!rows.length || rank < 1) return null;
-  const idx = Math.min(rows.length-1, rank-1);
-  const last = rows[idx];
-  const next = rows[idx+1];
-  return {rank:idx+1, last, next, cut:last.total, mid: next ? Math.round(((last.total + next.total)/2)*1000)/1000 : last.total};
-}
-function cutSet(rows,cfg){
-  const cuts = cumulativeCounts(rows.length,cfg);
-  return {
-    cuts,
-    AB:getBoundary(rows,cuts.cumA),
-    BC:getBoundary(rows,cuts.cumB),
-    CD:getBoundary(rows,cuts.cumC),
-    DE:getBoundary(rows,cuts.cumD),
-  };
-}
-
-function boundaryTieWarnings(set){
-  const labels = [['A/B', set.AB], ['B/C', set.BC], ['C/D', set.CD], ['D/E', set.DE]];
-  return labels
-    .filter(([label,b]) => b && b.next && Math.abs((b.last.total ?? 0) - (b.next.total ?? 0)) < 0.0005)
-    .map(([label,b]) => `${label} 경계에 동점자가 있습니다. 단순 순위 기준으로 표시되므로 실제 동점자 처리 기준과 다를 수 있습니다.`);
-}
-function missingSummary(missing){
-  if (!missing || !missing.length) return '';
-  const sample = missing.slice(0, 12).map(m => `${m.classNo}반 ${m.number}번(${m.missingItems.join('/')})`).join(', ');
-  const tail = missing.length > 12 ? ` 외 ${missing.length-12}명` : '';
-  return `일부 성적이 없어 계산에서 제외된 학생: ${missing.length}명 — ${sample}${tail}`;
-}
-
-function renderSummary(rows,cfg,set){
-  const wsum = cfg.weights.exam1+cfg.weights.exam2+cfg.weights.writing1+cfg.weights.writing2;
-  const avg = rows.length ? rows.reduce((s,r)=>s+r.total,0)/rows.length : 0;
-  const cards = [
-    ['학생정원', `${rows.length}명`, ''],
-    ['성취 인원', `A ${set.cuts.counts.A} · B ${set.cuts.counts.B} · C ${set.cuts.counts.C}`, `D ${set.cuts.counts.D} · E ${set.cuts.counts.E}`],
-    ['A/B 컷', set.AB ? fmt(set.AB.cut) : '-', `누적 ${set.cuts.cumA}명`],
-    ['B/C 컷', set.BC ? fmt(set.BC.cut) : '-', `누적 ${set.cuts.cumB}명`],
-    ['예상 평균', fmt(avg), `반영비율 합계 ${fmt(wsum,1)}%`],
-  ];
-  els.summaryCards.innerHTML = cards.map(([t,v,s]) => `<div class="kpi"><div class="t">${esc(t)}</div><div class="v">${esc(v)}</div><div class="small">${esc(s)}</div></div>`).join('');
-}
-function renderCutTable(rows,cfg,set){
-  const tb = els.cutTable.querySelector('tbody');
-  const data = [['AB',set.AB],['BC',set.BC],['CD',set.CD],['DE',set.DE]];
-  tb.innerHTML = data.map(([label,b]) => {
-    if (!b) return `<tr><td>${label}</td><td colspan="7">계산 불가</td></tr>`;
-    const r = b.last;
-    return `<tr>
-      <td><span class="grade-chip g${label[0]}">${label}</span></td><td>${b.rank}명</td><td>${fmt(r.exam1)}</td><td>${fmt(r.exam2)}</td><td>${fmt(r.writing1)}</td><td>${fmt(r.writing2)}</td><td><b>${fmt(b.cut)}</b></td><td>${fmt(b.mid)}</td>
-    </tr>`;
-  }).join('');
-}
-function renderScenario(cfg){
-  const tb = els.scenarioTable.querySelector('tbody');
-  const deltas = [-15,-10,-5,0,5,10,15];
-  tb.innerHTML = deltas.map(d => {
-    const {rows} = buildRows(d);
-    const set = cutSet(rows,cfg);
-    const avg = rows.length ? rows.reduce((s,r)=>s+r.total,0)/rows.length : 0;
-    const deltaText = d > 0 ? `+${d}` : `${d}`;
-    return `<tr><td>${deltaText}</td><td>${set.AB?fmt(set.AB.cut):'-'}</td><td>${set.BC?fmt(set.BC.cut):'-'}</td><td>${set.CD?fmt(set.CD.cut):'-'}</td><td>${set.DE?fmt(set.DE.cut):'-'}</td><td>${fmt(avg)}</td></tr>`;
-  }).join('');
-}
-function renderStudents(rows,cfg,set){
-  const tb = els.studentTable.querySelector('tbody');
-  if (!rows.length) {
-    tb.innerHTML = `<tr><td colspan="9">세 자료가 모두 있는 학생을 찾지 못했습니다. 붙여넣기 범위를 확인해 주세요.</td></tr>`;
-    els.rowCountInfo.textContent = '0명';
-    return;
-  }
-  tb.innerHTML = rows.map((r,i) => {
-    const rank = i+1;
-    const g = gradeForRank(rank,set.cuts);
-    return `<tr class="row${esc(g)}"><td>${esc(rank)}</td><td><span class="grade-chip g${esc(g)}">${esc(g)}</span></td><td>${esc(r.classNo)}반</td><td>${esc(r.number)}</td><td>${esc(fmt(r.exam1))}</td><td>${esc(fmt(r.exam2))}</td><td>${esc(fmt(r.writing1))}</td><td>${esc(fmt(r.writing2))}</td><td><b>${esc(fmt(r.total))}</b></td></tr>`;
-  }).join('');
-  els.rowCountInfo.textContent = `${rows.length}명`;
-}
-
-function calculate(){
-  const {rows,cfg,missingCount,missing} = buildRows();
-  const set = cutSet(rows,cfg);
-  lastRows = rows.map((r,i)=> ({rank:i+1, grade:gradeForRank(i+1,set.cuts), ...r}));
-  renderSummary(rows,cfg,set);
-  renderCutTable(rows,cfg,set);
-  renderScenario(cfg);
-  renderStudents(rows,cfg,set);
-
-  const wsum = cfg.weights.exam1+cfg.weights.exam2+cfg.weights.writing1+cfg.weights.writing2;
-  const warnings = [];
-  const missMsg = missingSummary(missing);
-  if (Math.abs(wsum-100) > 0.001) warnings.push(`반영비율 합계가 ${fmt(wsum,1)}%입니다. 보통 100%가 되도록 맞추는 것이 좋습니다.`);
-  if (cfg.pctA+cfg.pctB+cfg.pctC+cfg.pctD > 100) warnings.push('A~D 비율 합계가 100%를 넘습니다. D/E 구간이 정상적으로 나뉘지 않을 수 있습니다.');
-  if (!rows.length) warnings.push('1차지필·1차수행·2차수행 세 자료가 모두 있는 학생만 계산합니다.');
-  warnings.push(...boundaryTieWarnings(set));
-  const baseMsg = `계산 완료: 2차지필은 <b>1차지필 ${cfg.delta>=0?'+':''}${fmt(cfg.delta)}</b>로 예측했습니다. 누적 인원은 엑셀처럼 ROUNDUP 방식으로 계산합니다. 입력 점수는 100점 만점 기준 원점수를 전제로 합니다.`;
-  els.calcInfo.className = warnings.length ? 'notice bad' : 'notice ok';
-  els.calcInfo.innerHTML = warnings.length ? `${baseMsg}<br>${warnings.map(esc).join('<br>')}` : baseMsg;
-
-  const missingInfoEl = $('missingInfo');
-  if (missMsg) {
-    missingInfoEl.className = 'notice missing';
-    missingInfoEl.textContent = `⚠️ ${missMsg}`;
-  } else {
-    missingInfoEl.className = 'notice missing hide';
-    missingInfoEl.textContent = '';
-  }
-}
-
-function exportCSV(){
-  if (!lastRows.length) calculate();
-  if (!lastRows.length) return alert('내보낼 자료가 없습니다.');
-  if (!confirm('CSV 파일에는 학생 성적 정보가 포함됩니다. 개인 PC 또는 학교 보안 저장소에만 보관하세요. 내보낼까요?')) return;
-  const header = ['석차','성취','반','번호','1차지필','2차지필예상','1차수행','2차수행','예상총점'];
-  const body = lastRows.map(r => [r.rank,r.grade,r.classNo,r.number,r.exam1,r.exam2,r.writing1,r.writing2,r.total]);
-  const csv = [header, ...body].map(row => row.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = '분할점수_산출컷_예상.csv';
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(a.href);
-}
-
-function resetAll(){
-  els.exam1Text.value = '';
-  els.writing1Text.value = '';
-  els.writing2Text.value = '';
-  els.pctA.value = 20; els.pctB.value = 30; els.pctC.value = 30; els.pctD.value = 15;
-  els.wExam1.value = 30; els.wExam2.value = 30; els.wWriting1.value = 20; els.wWriting2.value = 20;
-  els.deltaExam2.value = 0; els.deltaRange.value = 0;
-  ['statusExam1','statusWriting1','statusWriting2'].forEach(id => { if ($(id)) $(id).textContent = '대기'; });
-  lastRows = [];
-  calculate();
-}
-
-$('clearTextBtn').addEventListener('click', () => {
-  if (!confirm('성적 붙여넣기 칸을 모두 비울까요?')) return;
-  els.exam1Text.value = ''; els.writing1Text.value = ''; els.writing2Text.value = ''; calculate();
-});
-$('fullResetBtn').addEventListener('click', () => {
-  if (!confirm('입력 자료와 설정값을 모두 초기화할까요?')) return;
-  resetAll();
-});
-$('calcBtn').addEventListener('click', calculate);
-$('exportBtn').addEventListener('click', exportCSV);
-els.deltaRange.addEventListener('input', () => { els.deltaExam2.value = els.deltaRange.value; calculate(); });
-els.deltaExam2.addEventListener('input', () => { els.deltaRange.value = clamp(toNum(els.deltaExam2.value) ?? 0, -30, 30); calculate(); });
-['exam1Text','writing1Text','writing2Text','pctA','pctB','pctC','pctD','wExam1','wExam2','wWriting1','wWriting2'].forEach(id => {
-  $(id).addEventListener('input', () => { clearTimeout(window.__calcTimer); window.__calcTimer = setTimeout(calculate, 350); });
-});
-calculate();
-
-// ── Excel / CSV 업로드 ────────────────────────────────────────────────
-function sheetToTsv(ws){
-  if(!ws['!ref']) return '';
-  const range=XLSX.utils.decode_range(ws['!ref']);
-  const rows=[];
-  for(let r=range.s.r;r<=range.e.r;r++){
-    const row=[];
-    let hasVal=false;
-    for(let c=range.s.c;c<=range.e.c;c++){
-      const cell=ws[XLSX.utils.encode_cell({r,c})];
-      const v=cell&&cell.v!==undefined?cell.v:'';
-      row.push(v);
-      if(v!=='') hasVal=true;
-    }
-    if(hasVal) rows.push(row.join('\t'));
-  }
-  return rows.join('\n');
-}
-
-// 수동 열 선택 팝업
-function pickCol(hdrs, label, autoTest){
-  const hdrList=hdrs.map((h,i)=>`${i+1}. ${h||'(빈열)'}`).join('\n');
-  let idx=hdrs.findIndex(h=>autoTest(String(h).trim()));
-  if(idx!==-1) return idx;
-  const ans=prompt(`"${label}" 열을 선택하세요 (번호 입력):\n\n${hdrList}`);
-  const n=parseInt(ans)-1;
-  return(n>=0&&n<hdrs.length)?n:-1;
-}
-
-// 엑셀 데이터 전체 읽기
-function readSheetData(ws){
-  if(!ws['!ref']) return [];
-  const range=XLSX.utils.decode_range(ws['!ref']);
-  const data=[];
-  for(let r=range.s.r;r<=range.e.r;r++){
-    const row=[];
-    for(let c=range.s.c;c<=range.e.c;c++){
-      const cell=ws[XLSX.utils.encode_cell({r,c})];
-      row.push(cell&&cell.v!==undefined?cell.v:'');
-    }
-    data.push(row);
-  }
-  return data;
-}
-
-// ── 전략 1: 가로 형식 ──────────────────────────────────────────────────
-// 상단 행 중 "1 2 3 4 ..." 처럼 연속 반 번호가 가로로 나열된 행을 찾아
-// 해당 열만 추출하고 번호(행) × 반(열) 표로 정리
+function sheetToTsv(ws){if(!ws['!ref'])return'';const range=XLSX.utils.decode_range(ws['!ref']),rows=[];for(let r=range.s.r;r<=range.e.r;r++){const row=[];let has=false;for(let c=range.s.c;c<=range.e.c;c++){const cell=ws[XLSX.utils.encode_cell({r,c})],value=cell&&cell.v!==undefined?cell.v:'';row.push(value);if(value!=='')has=true;}if(has)rows.push(row.join('\t'));}return rows.join('\n');}
+function readSheetData(ws){if(!ws['!ref'])return[];const range=XLSX.utils.decode_range(ws['!ref']),data=[];for(let r=range.s.r;r<=range.e.r;r++){const row=[];for(let c=range.s.c;c<=range.e.c;c++){const cell=ws[XLSX.utils.encode_cell({r,c})];row.push(cell&&cell.v!==undefined?cell.v:'');}data.push(row);}return data;}
+function pickCol(headers,test){return headers.findIndex(h=>test(String(h).trim()));}
 function tryHorizontalFormat(data){
-  const MAX_CLASS=30, SCAN_ROWS=12;
-
-  for(let r=0;r<Math.min(data.length,SCAN_ROWS);r++){
-    const row=data[r];
-    // 각 셀에서 반 번호 후보 수집
-    const candidates=[];
-    for(let c=0;c<row.length;c++){
-      const s=String(row[c]).trim();
-      const m=s.match(/^(\d+)(반)?$/);
-      if(m){
-        const n=parseInt(m[1]);
-        if(n>=1&&n<=MAX_CLASS) candidates.push({c,n});
-      }
-    }
-    if(candidates.length<2) continue;
-
-    // 열 인덱스 기준 오름차순 정렬 후 반 번호도 오름차순인지 확인
-    candidates.sort((a,b)=>a.c-b.c);
-    const increasing=candidates.every((x,i)=>i===0||x.n>candidates[i-1].n);
-    if(!increasing) continue;
-
-    // 반 열들 왼쪽에서 번호 열 탐색
-    const classColSet=new Set(candidates.map(x=>x.c));
-    let numCol=-1;
-    for(let c=candidates[0].c-1;c>=0;c--){
-      if(classColSet.has(c)) continue;
-      const hVal=String(row[c]).trim();
-      // 헤더에 "번호" 텍스트 or 빈칸(첫 번째 열 관례)이면 번호 열
-      if(/번호|학번|no\.?/i.test(hVal)||hVal===''||c===0){numCol=c;break;}
-    }
-    if(numCol===-1) numCol=candidates[0].c-1; // 바로 왼쪽 열 폴백
-
-    // 데이터 행 추출
-    const classNums=candidates.map(x=>x.n);
-    const classColIdxs=candidates.map(x=>x.c);
-    const header=['번호',...classNums.map(n=>`${n}반`)];
-    const bodyRows=[];
-    for(let dr=r+1;dr<data.length;dr++){
-      const drow=data[dr];
-      const num= numCol>=0 ? toNum(drow[numCol]) : null;
-      if(num===null) continue;
-      const scores=classColIdxs.map(ci=>{const v=toNum(drow[ci]);return v!==null?v:'';});
-      if(scores.every(v=>v==='')) continue;
-      bodyRows.push([num,...scores]);
-    }
-    if(bodyRows.length>0)
-      return [header,...bodyRows].map(r=>r.join('\t')).join('\n');
-  }
+  const MAX_CLASS=30,SCAN_ROWS=12;
+  for(let r=0;r<Math.min(data.length,SCAN_ROWS);r++){const row=data[r],candidates=[];for(let c=0;c<row.length;c++){const match=String(row[c]).trim().match(/^(\d+)(반)?$/);if(match){const n=parseInt(match[1]);if(n>=1&&n<=MAX_CLASS)candidates.push({c,n});}}if(candidates.length<2)continue;candidates.sort((a,b)=>a.c-b.c);if(!candidates.every((x,i)=>i===0||x.n>candidates[i-1].n))continue;const classCols=new Set(candidates.map(x=>x.c));let numCol=-1;for(let c=candidates[0].c-1;c>=0;c--){if(classCols.has(c))continue;const h=String(row[c]).trim();if(/번호|학번|no\.?/i.test(h)||h===''||c===0){numCol=c;break;}}if(numCol===-1)numCol=candidates[0].c-1;const header=['번호',...candidates.map(x=>`${x.n}반`)],body=[];for(let dr=r+1;dr<data.length;dr++){const drow=data[dr],num=numCol>=0?toNum(drow[numCol]):null;if(num===null)continue;const scores=candidates.map(x=>toNum(drow[x.c])??'');if(scores.every(v=>v===''))continue;body.push([num,...scores]);}if(body.length)return[header,...body].map(x=>x.join('\t')).join('\n');}
   return null;
 }
-
-// ── 전략 2: 세로 일람표 형식 ──────────────────────────────────────────
-// 반·번호 열이 세로로 있는 일람표를 피벗
 function tryVerticalFormat(data){
-  const hdrs=data[0].map(h=>String(h).trim());
-  const classIdx=pickCol(hdrs,'반(학급)',h=>/반|학급|학반/i.test(h));
-  if(classIdx===-1) return null;
-  const numIdx=pickCol(hdrs,'번호(학번)',h=>/^(번호|학번|no\.?)$/i.test(h));
-  if(numIdx===-1) return null;
-
-  const skipPat=/이름|성명|name|반|학급|학반|번호|학번|학교|학년|성별|연번|순번/i;
-  const scoreCols=hdrs.map((h,i)=>({h,i}))
-    .filter(({h,i})=>i!==classIdx&&i!==numIdx&&!skipPat.test(h)&&h!=='');
-
-  let scoreIdx;
-  if(scoreCols.length===0){
-    scoreIdx=pickCol(hdrs,'점수',()=>false);
-    if(scoreIdx===-1) return null;
-  } else if(scoreCols.length===1){
-    scoreIdx=scoreCols[0].i;
-  } else {
-    const opts=scoreCols.map(({h,i})=>`${i+1}. ${h}`).join('\n');
-    const ans=prompt(`점수 열을 선택하세요 (번호 입력):\n\n${opts}`);
-    const pick=scoreCols.find(({i})=>i===parseInt(ans)-1);
-    scoreIdx=pick?pick.i:scoreCols[scoreCols.length-1].i;
-  }
-
-  const pivotMap=new Map();
-  const classSet=new Set();
-  for(let r=1;r<data.length;r++){
-    const row=data[r];
-    const cn=toNum(row[classIdx]),sn=toNum(row[numIdx]),sc=toNum(row[scoreIdx]);
-    if(cn===null||sn===null) continue;
-    classSet.add(cn);
-    if(!pivotMap.has(sn)) pivotMap.set(sn,{});
-    pivotMap.get(sn)[cn]=sc;
-  }
-  if(!classSet.size) return null;
-
-  const classes=[...classSet].sort((a,b)=>a-b);
-  const numbers=[...pivotMap.keys()].sort((a,b)=>a-b);
-  const header=['번호',...classes.map(c=>`${c}반`)];
-  const bodyRows=numbers.map(n=>[n,...classes.map(c=>pivotMap.get(n)[c]??'')]);
-  return [header,...bodyRows].map(r=>r.join('\t')).join('\n');
+  if(!data.length)return null;const headers=data[0].map(h=>String(h).trim());const classIdx=pickCol(headers,h=>/^(반|학급|학반)$/i.test(h));if(classIdx===-1)return null;const numIdx=pickCol(headers,h=>/^(번호|학번|no\.?)$/i.test(h));if(numIdx===-1)return null;const skip=/이름|성명|name|반|학급|학반|번호|학번|학교|학년|성별|연번|순번/i;const scoreCols=headers.map((h,i)=>({h,i})).filter(x=>x.i!==classIdx&&x.i!==numIdx&&!skip.test(x.h)&&x.h!=='');if(!scoreCols.length)return null;const preferred=scoreCols.find(x=>/^(점수|원점수|총점|성적)$/i.test(x.h));const scoreIdx=(preferred||scoreCols[scoreCols.length-1]).i;const pivot=new Map(),classes=new Set();for(let r=1;r<data.length;r++){const row=data[r],cn=toNum(row[classIdx]),sn=toNum(row[numIdx]),score=toNum(row[scoreIdx]);if(cn===null||sn===null)continue;classes.add(cn);if(!pivot.has(sn))pivot.set(sn,{});pivot.get(sn)[cn]=score;}if(!classes.size)return null;const classList=[...classes].sort((a,b)=>a-b),numbers=[...pivot.keys()].sort((a,b)=>a-b),header=['번호',...classList.map(c=>`${c}반`)],body=numbers.map(n=>[n,...classList.map(c=>pivot.get(n)[c]??'')]);return[header,...body].map(row=>row.join('\t')).join('\n');
+}
+function detectAndConvert(ws){const data=readSheetData(ws);return data.length?(tryHorizontalFormat(data)??tryVerticalFormat(data)??sheetToTsv(ws)):'';}
+function chooseSheetName(names){return new Promise(resolve=>{const dialog=$('sheetDialog'),select=$('sheetSelect');select.replaceChildren(...names.map(name=>{const option=document.createElement('option');option.value=name;option.textContent=name;return option;}));dialog.addEventListener('close',()=>resolve(dialog.returnValue==='confirm'?select.value:names[0]),{once:true});dialog.showModal();});}
+async function handleFileUpload(fileInput,textareaId,statusId){
+  const file=fileInput.files[0];if(!file)return;const status=$(statusId);status.textContent='처리 중…';
+  try{const ext=file.name.toLowerCase().split('.').pop();if(!['xlsx','xls','csv'].includes(ext))throw new Error('XLSX, XLS 또는 CSV 파일만 사용할 수 있습니다.');if(file.size>20*1024*1024)throw new Error('20MB 이하 파일만 사용할 수 있습니다.');let tsv='';if(ext==='csv')tsv=await file.text();else{if(typeof XLSX==='undefined')throw new Error('로컬 Excel 해석 파일을 불러오지 못했습니다.');const workbook=XLSX.read(new Uint8Array(await file.arrayBuffer()),{type:'array'});const sheet=workbook.SheetNames.length>1?await chooseSheetName(workbook.SheetNames):workbook.SheetNames[0];tsv=detectAndConvert(workbook.Sheets[sheet]);}$(textareaId).value=tsv;$(textareaId).dispatchEvent(new Event('input'));status.textContent='파일 읽기 완료';}catch(error){status.textContent=`오류: ${error.message}`;alert(`파일 처리 오류: ${error.message}`);}finally{fileInput.value='';}
 }
 
-function detectAndConvert(ws){
-  const data=readSheetData(ws);
-  if(!data.length) return '';
-  return tryHorizontalFormat(data) ?? tryVerticalFormat(data) ?? sheetToTsv(ws);
+// ── 예상점수 생성 ─────────────────────────────────────────────────────
+function midrankPercentiles(entries){
+  const sorted=[...entries].sort((a,b)=>a.score-b.score||a.classNo-b.classNo||a.number-b.number),result=new Map(),n=sorted.length;let i=0;
+  while(i<n){let j=i;while(j+1<n&&Math.abs(sorted[j+1].score-sorted[i].score)<1e-9)j++;const percentile=n===1?.5:((i+j)/2)/(n-1);for(let k=i;k<=j;k++)result.set(sorted[k].key,percentile);i=j+1;}
+  return result;
+}
+function adjustMeanBounded(values,target,min,max){
+  const out=[...values];target=clamp(target,min,max);
+  for(let iteration=0;iteration<20;iteration++){const mean=out.reduce((s,v)=>s+v,0)/(out.length||1),gap=target-mean;if(Math.abs(gap)<0.0001)break;const free=out.map((v,i)=>({v,i})).filter(x=>gap>0?x.v<max-1e-8:x.v>min+1e-8);if(!free.length)break;const shift=gap*out.length/free.length;free.forEach(({i})=>{out[i]=clamp(out[i]+shift,min,max);});}
+  return out.map(v=>Math.round(v*1000)/1000);
+}
+function estimatePerformanceFromExam1(examMap,settings){
+  const entries=[...examMap.entries()].map(([key,v])=>({key,...v}));if(!entries.length)return new Map();const min=clamp(Math.min(settings.min,settings.max)),max=clamp(Math.max(settings.min,settings.max)),strength=clamp(settings.strength,0,1),percentiles=midrankPercentiles(entries);const raw=entries.map(entry=>min+(max-min)*(.5+(percentiles.get(entry.key)-.5)*strength));const adjusted=adjustMeanBounded(raw,settings.mean,min,max);const result=new Map();entries.forEach((entry,i)=>result.set(entry.key,{classNo:entry.classNo,number:entry.number,score:adjusted[i]}));return result;
+}
+function estimateExam2Offset(examMap,delta,offset=0,sourceMax=100,targetMax=100){const result=new Map();examMap.forEach((v,key)=>result.set(key,{...v,score:Math.round(clamp(v.score/sourceMax*targetMax+delta+offset,0,targetMax)*1000)/1000}));return result;}
+function estimateExam2Linear(examMap,targetMin,targetMax,offset=0){
+  const entries=[...examMap.values()];if(!entries.length)return new Map();
+  const sourceMin=Math.min(...entries.map(v=>v.score)),sourceMax=Math.max(...entries.map(v=>v.score)),lo=Math.min(targetMin,targetMax),hi=Math.max(targetMin,targetMax),result=new Map();
+  examMap.forEach((v,key)=>{const ratio=sourceMax>sourceMin?(v.score-sourceMin)/(sourceMax-sourceMin):.5;result.set(key,{...v,score:Math.round(clamp(lo+ratio*(hi-lo)+offset,lo,hi)*1000)/1000});});
+  return result;
+}
+function percentileAtScore(examMap,score){const values=[...examMap.values()].map(v=>v.score).sort((a,b)=>a-b);if(!values.length)return null;if(values.length===1)return .5;if(score<=values[0])return 0;if(score>=values.at(-1))return 1;let i=0;while(i<values.length-1&&values[i+1]<score)i++;const a=values[i],b=values[i+1],fraction=b>a?(score-a)/(b-a):0;return (i+fraction)/(values.length-1);}
+function estimateExam2CutsFromExam1(examMap,maxes){
+  const source=getAssessmentCuts('Exam1'),levels=activeLevels();
+  if(!examMap.size||!levels.every(level=>source[level]!==null))return null;
+  const out={A:null,B:null,C:null,D:null,E:null};
+  if(state.modes.exam2==='offset'){const delta=clamp(toNum($('exam2Delta').value)??0,-30,30);levels.forEach(level=>out[level]=Math.round(clamp(source[level]/maxes.exam1*maxes.exam2+delta,0,maxes.exam2)*1000)/1000);}
+  else{const lo=clamp(Math.min(toNum($('exam2LinearMin').value)??0,toNum($('exam2LinearMax').value)??maxes.exam2),0,maxes.exam2),hi=clamp(Math.max(toNum($('exam2LinearMin').value)??0,toNum($('exam2LinearMax').value)??maxes.exam2),0,maxes.exam2);levels.forEach(level=>{const p=percentileAtScore(examMap,source[level]);out[level]=p===null?null:Math.round((lo+p*(hi-lo))*1000)/1000;});}
+  if(!state.includeI)out.E=null;return validDescending(out,maxes.exam2,state.includeI)?out:null;
 }
 
-async function handleFileUpload(inputEl,textareaId,statusId){
-  const file=inputEl.files[0];
-  if(!file) return;
-  const statusEl=$(statusId);
-  statusEl.textContent='처리 중…';
-  try{
-    const MAX_FILE_SIZE=20*1024*1024;
-    const ext=file.name.toLowerCase().split('.').pop();
-    if(!['xlsx','xls','csv'].includes(ext)){
-      throw new Error('지원하지 않는 파일 형식입니다. XLSX, XLS 또는 CSV 파일을 선택해 주세요.');
-    }
-    if(file.size>MAX_FILE_SIZE){
-      throw new Error('파일이 너무 큽니다. 개인정보 노출과 브라우저 과부하를 막기 위해 20MB 이하 파일만 사용할 수 있습니다.');
-    }
-    let tsv='';
-    const name=file.name.toLowerCase();
-    if(name.endsWith('.csv')){
-      tsv=await file.text();
-      statusEl.textContent='업로드 완료 (CSV)';
-    } else {
-      if(typeof XLSX === 'undefined'){
-        throw new Error('엑셀 해석 파일(xlsx.full.min.js 또는 xlsx_full.min.js)을 index.html과 같은 폴더에 올려 주세요.');
-      }
-      const buf=await file.arrayBuffer();
-      const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
-      let sheetName=wb.SheetNames[0];
-      if(wb.SheetNames.length>1){
-        const opts=wb.SheetNames.map((n,i)=>`${i+1}. ${n}`).join('\n');
-        const ans=prompt(`여러 시트가 있습니다. 사용할 시트 번호를 입력하세요:\n${opts}`);
-        const idx=parseInt(ans)-1;
-        if(idx>=0&&idx<wb.SheetNames.length) sheetName=wb.SheetNames[idx];
-      }
-      tsv=detectAndConvert(wb.Sheets[sheetName]);
-      statusEl.textContent=`업로드 완료 (${sheetName})`;
-    }
-    $(textareaId).value=tsv;
-    $(textareaId).dispatchEvent(new Event('input'));
-  }catch(err){
-    statusEl.textContent='오류: '+err.message;
-    alert('파일 처리 오류: '+err.message);
-  }
-  inputEl.value='';
+// ── 학기말 계산/성취도 ────────────────────────────────────────────────
+function assignAchievementByCut(total,cuts,useI=false){if(total>=cuts.A)return'A';if(total>=cuts.B)return'B';if(total>=cuts.C)return'C';if(total>=cuts.D)return'D';if(useI&&total<cuts.E)return'I';return'E';}
+function calculateSemesterValue(values,maxes,weights){return Math.round(Object.keys(weights).reduce((sum,key)=>sum+(values[key]/maxes[key])*weights[key],0)*1000)/1000;}
+function readSemesterBase(){
+  const weights={exam1:toNum($('wExam1').value)??0,exam2:toNum($('wExam2').value)??0,perf1:toNum($('wPerf1').value)??0,perf2:toNum($('wPerf2').value)??0},maxes={exam1:toNum($('maxExam1').value)??0,exam2:toNum($('maxExam2').value)??0,perf1:toNum($('maxPerf1').value)??0,perf2:toNum($('maxPerf2').value)??0};return{weights,maxes,targetARate:toNum($('targetARate').value)??0,useI:state.includeI};
+}
+function buildSemesterConfig(exam1Map){
+  const base=readSemesterBase(),assessmentCuts={exam1:getAssessmentCuts('Exam1'),exam2:estimateExam2CutsFromExam1(exam1Map,base.maxes),perf1:getAssessmentCuts('Perf1'),perf2:getAssessmentCuts('Perf2')},cuts={A:null,B:null,C:null,D:null,E:null};
+  updateExam2AutoCutDisplay(assessmentCuts.exam2);
+  const levels=activeLevels(),ready=assessmentCuts.exam2!==null&&['exam1','perf1','perf2'].every(key=>levels.every(level=>assessmentCuts[key][level]!==null));
+  if(ready)levels.forEach(level=>cuts[level]=calculateSemesterValue(Object.fromEntries(Object.keys(base.weights).map(key=>[key,assessmentCuts[key][level]])),base.maxes,base.weights));
+  return{...base,assessmentCuts,cuts,cutReady:ready};
+}
+function performanceSettings(prefix){return{min:toNum($(prefix+'Min').value)??0,max:toNum($(prefix+'Max').value)??100,mean:toNum($(prefix+'Mean').value)??0,strength:toNum($(prefix+'Strength').value)??.65};}
+function buildSemesterRows(exam2Offset=0){
+  const exam1=parseScoreTable($('exam1Text').value),perf1Actual=parseScoreTable($('perf1Text').value),perf2Actual=parseScoreTable($('perf2Text').value),config=buildSemesterConfig(exam1.map);
+  $('statusExam1').textContent=exam1.rows?`${exam1.rows}개 점수 인식`:exam1.warning;$('statusPerf1').textContent=perf1Actual.rows?`${perf1Actual.rows}개 점수 인식`:perf1Actual.warning;$('statusPerf2').textContent=perf2Actual.rows?`${perf2Actual.rows}개 점수 인식`:perf2Actual.warning;
+  const perf1=state.modes.perf1==='estimate'?estimatePerformanceFromExam1(exam1.map,performanceSettings('perf1')):perf1Actual.map;
+  const perf2=state.modes.perf2==='estimate'?estimatePerformanceFromExam1(exam1.map,performanceSettings('perf2')):perf2Actual.map;
+  const exam2=state.modes.exam2==='linear'?estimateExam2Linear(exam1.map,toNum($('exam2LinearMin').value)??0,toNum($('exam2LinearMax').value)??config.maxes.exam2,exam2Offset):estimateExam2Offset(exam1.map,clamp(toNum($('exam2Delta').value)??0,-30,30),exam2Offset,config.maxes.exam1,config.maxes.exam2);
+  updateExam2Preview(exam2);
+  const missing=[],rows=[];
+  exam1.map.forEach((base,key)=>{const missingItems=[];if(!perf1.has(key))missingItems.push('1차 수행');if(!perf2.has(key))missingItems.push('2차 수행');if(!exam2.has(key))missingItems.push('2차 지필 예상');if(missingItems.length){missing.push({classNo:base.classNo,number:base.number,items:missingItems});return;}const scores={exam1:base.score,exam2:exam2.get(key).score,perf1:perf1.get(key).score,perf2:perf2.get(key).score};const total=calculateSemesterValue(scores,config.maxes,config.weights);rows.push({key,classNo:base.classNo,number:base.number,...scores,total});});
+  [perf1Actual.map,perf2Actual.map].forEach((map,index)=>{if((index===0?state.modes.perf1:state.modes.perf2)!=='actual')return;map.forEach((v,key)=>{if(!exam1.map.has(key))missing.push({classNo:v.classNo,number:v.number,items:['1차 지필']});});});
+  rows.sort((a,b)=>b.total-a.total||b.exam1-a.exam1||a.classNo-b.classNo||a.number-b.number);rows.forEach((row,i)=>{row.rank=i+1;row.grade=config.cutReady?assignAchievementByCut(row.total,config.cuts,config.useI):'-';});missing.sort((a,b)=>a.classNo-b.classNo||a.number-b.number);
+  return{rows,missing,config,exam1Count:exam1.rows};
+}
+function distributionFor(rows,useI=false){const grades=useI?['A','B','C','D','E','I']:['A','B','C','D','E'],counts=Object.fromEntries(grades.map(g=>[g,0]));rows.forEach(row=>{if(counts[row.grade]!==undefined)counts[row.grade]++;});const graded=Object.values(counts).reduce((s,v)=>s+v,0);return Object.fromEntries(grades.map(grade=>[grade,{count:counts[grade],rate:graded?counts[grade]/graded*100:0}]));}
+
+// ── 경계 분석 ─────────────────────────────────────────────────────────
+function analyzeBoundary(rows,boundary,cuts){
+  const pairs={AB:['A','B','A'],BC:['B','C','B'],CD:['C','D','C'],DE:['D','E','D'],EI:['E','I','E']},[upper,lower,cutKey]=pairs[boundary],cut=cuts[cutKey],upperRows=rows.filter(r=>r.grade===upper),lowerRows=rows.filter(r=>r.grade===lower),upperMin=upperRows.length?Math.min(...upperRows.map(r=>r.total)):null,lowerMax=lowerRows.length?Math.max(...lowerRows.map(r=>r.total)):null,gap=upperMin!==null&&lowerMax!==null?upperMin-lowerMax:null,reference=gap!==null?(upperMin+lowerMax)/2:null,within05=rows.filter(r=>Math.abs(r.total-cut)<=.5+1e-9).length,within10=rows.filter(r=>Math.abs(r.total-cut)<=1+1e-9).length,ties=rows.filter(r=>Math.abs(r.total-cut)<.0005).length;
+  let transition=rows.findIndex(r=>r.total<cut);if(transition<0)transition=rows.length;const start=Math.max(0,transition-5),end=Math.min(rows.length,transition+5);return{boundary,upper,lower,cut,upperMin,lowerMax,gap,reference,within05,within10,ties,nearby:rows.slice(start,end)};
 }
 
-function clearSingleInput(textareaId,statusId){
-  if(!confirm('이 칸의 내용을 삭제할까요?')) return;
-  $(textareaId).value='';
-  $(statusId).textContent='대기';
-  $(textareaId).dispatchEvent(new Event('input'));
+// ── 지필 추정분할점수 공통 엔진 ──────────────────────────────────────
+const INVERSE_WEIGHTS={targetError:3,extremePenalty:6,difficultySmoothness:.18,achievementSmoothness:.12,crossTypeSmoothness:.05};
+const INVERSE_BEAM={profileWidth:180,globalWidth:70,profilesPerState:35,resultCount:3};
+function invalidateInverse(){activeCutExam().candidates=[];$('reverseResult').innerHTML='';}
+function ebelCategoryPoints(){const sums=Object.fromEntries(CATEGORIES.map(c=>[c.key,0]));activeCutExam().items.forEach(item=>{const category=CATEGORIES.find(c=>c.type===item.type&&c.difficulty===item.difficulty);if(category)sums[category.key]+=Math.max(0,item.point||0);});return sums;}
+function activeCategoryPoints(){return activeCutExam().method==='simple'?{...activeCutExam().simplePoints}:ebelCategoryPoints();}
+function totalPoints(points=activeCategoryPoints()){return Object.values(points).reduce((sum,value)=>sum+value,0);}
+function renderSimplePointRows(){const exam=activeCutExam();$('simplePointBody').innerHTML=CATEGORIES.map(category=>`<tr><td>${category.label}</td><td><input class="simple-point" data-category="${category.key}" type="number" value="${exam.simplePoints[category.key]}" min="0" step="0.1" aria-label="${category.label} 배점합"></td></tr>`).join('');$('simplePointBody').querySelectorAll('.simple-point').forEach(input=>input.addEventListener('input',()=>{exam.simplePoints[input.dataset.category]=Math.max(0,toNum(input.value)??0);invalidateInverse();renderRateTable();calculateCutResults();}));}
+function renderItemRows(){const exam=activeCutExam(),body=$('itemBody');body.innerHTML=exam.items.map((item,i)=>`<tr><td><input class="item-number" type="number" value="${esc(item.number)}" min="1" step="1" aria-label="${i+1}행 문항번호"></td><td><input class="item-point" type="number" value="${item.point}" min="0" step="0.1" aria-label="${i+1}행 배점"></td><td><select class="item-type" aria-label="${i+1}행 유형"><option value="choice" ${item.type==='choice'?'selected':''}>선택형</option><option value="written" ${item.type==='written'?'selected':''}>서답형</option></select></td><td><select class="item-difficulty" aria-label="${i+1}행 난이도"><option value="easy" ${item.difficulty==='easy'?'selected':''}>쉬움</option><option value="normal" ${item.difficulty==='normal'?'selected':''}>보통</option><option value="hard" ${item.difficulty==='hard'?'selected':''}>어려움</option></select></td></tr>`).join('');body.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',()=>{const row=el.closest('tr'),index=[...body.children].indexOf(row),target=exam.items[index];target.number=toNum(row.querySelector('.item-number').value)??index+1;target.point=Math.max(0,toNum(row.querySelector('.item-point').value)??0);target.type=row.querySelector('.item-type').value;target.difficulty=row.querySelector('.item-difficulty').value;invalidateInverse();renderCategorySummary();renderRateTable();calculateCutResults();}));renderCategorySummary();}
+function renderCategorySummary(){const points=ebelCategoryPoints();$('categorySummary').innerHTML=CATEGORIES.map(c=>`<div class="source-item"><b>${c.label}</b> ${fmt(points[c.key])}점</div>`).join('');}
+function rateOptions(value){return`<option value="">선택</option>${Array.from({length:21},(_,i)=>i*5).map(rate=>`<option value="${rate}" ${value===rate?'selected':''}>${rate}%</option>`).join('')}`;}
+function renderRateTable(){
+  const exam=activeCutExam(),points=activeCategoryPoints(),levels=activeLevels();
+  $('rateBody').innerHTML=CATEGORIES.map(category=>`<tr><td>${category.label}</td><td>${fmt(points[category.key])}</td>${LEVELS.map(level=>{const disabled=points[category.key]<=0||(!state.includeI&&level==='E');const shown=!state.includeI&&level==='E'?'<option value="">미선택</option>':rateOptions(exam.rates[level][category.key]);return`<td><select class="rate-select" data-level="${level}" data-category="${category.key}" ${disabled?'disabled':''}>${shown}</select></td>`;}).join('')}</tr>`).join('');
+  $('rateBody').querySelectorAll('.rate-select').forEach(select=>select.addEventListener('change',()=>{const value=toNum(select.value);exam.rates[select.dataset.level][select.dataset.category]=value===null?null:value;invalidateInverse();calculateCutResults();}));
 }
+function validateRateLogic(points,rates){
+  const invalid=new Map(),messages=[],levels=activeLevels();
+  const mark=(category,level,message)=>{invalid.set(`${category}|${level}`,true);if(!messages.includes(message))messages.push(message);};
+  for(const category of CATEGORIES){if(points[category.key]<=0)continue;for(let i=0;i<levels.length-1;i++){const upper=levels[i],lower=levels[i+1],a=rates[upper][category.key],b=rates[lower][category.key];if(a!==null&&b!==null&&b>=a){const msg=`${upper} 최소능력자의 정답률은 ${lower}보다 최소 5%p 높아야 합니다.`;mark(category.key,upper,msg);mark(category.key,lower,msg);}}}
+  for(const type of ['choice','written'])for(const level of levels){const cats=['easy','normal','hard'].map(d=>CATEGORIES.find(c=>c.type===type&&c.difficulty===d));for(let i=0;i<2;i++){const easierCat=cats[i],harderCat=cats[i+1];if(points[easierCat.key]<=0||points[harderCat.key]<=0)continue;const easier=rates[level][easierCat.key],harder=rates[level][harderCat.key];if(easier!==null&&harder!==null&&harder>=easier){const typeName=type==='choice'?'선택형':'서답형',msg=`${typeName} ${level}의 쉬운 문항 정답률은 더 어려운 문항보다 최소 5%p 높아야 합니다.`;mark(easierCat.key,level,msg);mark(harderCat.key,level,msg);}}}
+  for(const difficulty of ['easy','normal','hard'])for(const level of levels){const choice=CATEGORIES.find(c=>c.type==='choice'&&c.difficulty===difficulty),written=CATEGORIES.find(c=>c.type==='written'&&c.difficulty===difficulty);if(points[choice.key]<=0||points[written.key]<=0)continue;const choiceRate=rates[level][choice.key],writtenRate=rates[level][written.key];if(choiceRate!==null&&writtenRate!==null&&writtenRate>choiceRate){const names={easy:'쉬움',normal:'보통',hard:'어려움'},msg=`${names[difficulty]} ${level}에서는 서답형 정답률이 선택형보다 높을 수 없습니다.`;mark(choice.key,level,msg);mark(written.key,level,msg);}}
+  const complete=levels.every(level=>CATEGORIES.every(category=>points[category.key]<=0||rates[level][category.key]!==null));
+  return{valid:complete&&!messages.length,complete,invalid,messages};
+}
+function calculateAssessmentCuts(points,rates){const out={A:null,B:null,C:null,D:null,E:null};activeLevels().forEach(level=>out[level]=Math.round(CATEGORIES.reduce((sum,category)=>sum+points[category.key]*(rates[level][category.key]??0)/100,0)*1000)/1000);return out;}
+function calculateCutResults(){const exam=activeCutExam(),points=activeCategoryPoints(),sum=totalPoints(points),max=toNum($('cutAssessmentMax').value)??0,pointOk=Math.abs(sum-max)<.001,logic=validateRateLogic(points,exam.rates);$('pointTotalNotice').className=`notice ${pointOk?'ok':'bad'}`;$('pointTotalNotice').textContent=pointOk?`문항범주 배점합 ${fmt(sum)}점 · 평가 만점과 일치합니다.`:`문항범주 배점합 ${fmt(sum)}점이 평가 만점 ${fmt(max)}점과 다릅니다.`;document.querySelectorAll('.rate-select').forEach(select=>select.classList.toggle('rate-invalid',logic.invalid.has(`${select.dataset.category}|${select.dataset.level}`)));const validation=$('rateValidation');validation.className=`notice ${logic.messages.length?'bad':logic.complete?'ok':'info'}`;validation.innerHTML=logic.messages.length?logic.messages.map(esc).join('<br>'):logic.complete?'성취수준과 난이도 순서가 올바릅니다.':'모든 사용 범주의 예상정답률을 선택해 주세요.';state.itemCuts=logic.valid&&pointOk?calculateAssessmentCuts(points,exam.rates):{A:null,B:null,C:null,D:null,E:null};renderItemCutResults();return{points,pointOk,logic};}
+function renderItemCutResults(){['A','B','C','D'].forEach(level=>$('itemCut'+level).textContent=fmt(state.itemCuts[level]));$('itemCutE').textContent=state.includeI?fmt(state.itemCuts.E):'미선택';}
+function smoothnessPenalty(gap){const normalized=Math.abs(gap)/5;return normalized+normalized*normalized*.08;}
+function generateLevelProfiles(target,points,maxRates,previousRates){let beam=[{rates:[],sum:0,cost:0}];const pointArray=CATEGORIES.map(c=>points[c.key]);for(let index=0;index<CATEGORIES.length;index++){const next=[];for(const partial of beam){const difficultyMax=index%3===0?100:partial.rates[index-1]-5,achievementMax=previousRates?previousRates[index]-5:100,crossTypeMax=index<3?100:partial.rates[index-3],allowedMax=Math.min(100,difficultyMax,achievementMax,crossTypeMax,maxRates[index]);if(allowedMax<0)continue;for(let rate=0;rate<=allowedMax;rate+=5){const sum=partial.sum+pointArray[index]*rate/100,extreme=(rate===0||rate===100)?INVERSE_WEIGHTS.extremePenalty:0,diff=index%3===0?0:INVERSE_WEIGHTS.difficultySmoothness*smoothnessPenalty(partial.rates[index-1]-rate),achievement=previousRates?INVERSE_WEIGHTS.achievementSmoothness*smoothnessPenalty(previousRates[index]-rate):0,cross=index<3?0:INVERSE_WEIGHTS.crossTypeSmoothness*smoothnessPenalty(partial.rates[index-3]-rate),rates=[...partial.rates,rate],localCost=partial.cost+extreme+diff+achievement+cross,remainingMax=pointArray.slice(index+1).reduce((s,p,j)=>s+p*Math.max(0,Math.min(maxRates[index+1+j],100))/100,0),lower=sum,upper=sum+remainingMax,distance=target<lower?lower-target:target>upper?target-upper:0;next.push({rates,sum,cost:localCost,rank:localCost+distance*INVERSE_WEIGHTS.targetError});}}next.sort((a,b)=>a.rank-b.rank);beam=next.slice(0,INVERSE_BEAM.profileWidth);if(!beam.length)break;}return beam.map(profile=>({...profile,cost:profile.cost+Math.abs(profile.sum-target)*INVERSE_WEIGHTS.targetError})).sort((a,b)=>a.cost-b.cost).slice(0,INVERSE_BEAM.profilesPerState);}
+function inverseCandidates(points,targets){const levels=activeLevels();let global=[{profiles:[],cost:0}];for(let levelIndex=0;levelIndex<levels.length;levelIndex++){const next=[];for(const stateItem of global){const previous=stateItem.profiles.at(-1)?.rates??null,maxRates=previous?previous.map(v=>v-5):Array(6).fill(100),profiles=generateLevelProfiles(targets[levels[levelIndex]],points,maxRates,previous);for(const profile of profiles)next.push({profiles:[...stateItem.profiles,profile],cost:stateItem.cost+profile.cost});}next.sort((a,b)=>a.cost-b.cost);const seen=new Set();global=[];for(const candidate of next){const key=candidate.profiles.map(p=>p.rates.join(',')).join('|');if(seen.has(key))continue;seen.add(key);global.push(candidate);if(global.length>=INVERSE_BEAM.globalWidth)break;}}return global.slice(0,INVERSE_BEAM.resultCount).map(candidate=>{const rates=blankRates();levels.forEach((level,i)=>CATEGORIES.forEach((category,j)=>rates[level][category.key]=candidate.profiles[i].rates[j]));const cuts=calculateAssessmentCuts(points,rates);return{rates,cuts,cost:candidate.cost,errors:Object.fromEntries(levels.map(level=>[level,cuts[level]-targets[level]]))};});}
+function renderInverseCandidates(){const exam=activeCutExam(),levels=activeLevels(),targets=Object.fromEntries(levels.map(level=>[level,toNum($('reverse'+level).value)??0]));$('reverseResult').innerHTML=exam.candidates.map((candidate,index)=>{const maxError=Math.max(...levels.map(level=>Math.abs(candidate.errors[level]))),warning=maxError>1?`현재 배점 구조에서는 자연스러운 배열로 목표에 정확히 맞추기 어렵습니다. 최대 오차 ${fmt(maxError)}점입니다.`:'';return`<div class="candidate ${index===exam.selectedCandidate?'selected':''}"><div class="actions"><b>추천안 ${index+1}</b><button class="btn secondary small apply-candidate" data-index="${index}">현재 입력값에 적용</button></div>${warning?`<div class="notice warn">${esc(warning)}</div>`:''}<div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>범주</th>${levels.map(l=>`<th>${l}</th>`).join('')}</tr></thead><tbody>${CATEGORIES.map(c=>`<tr><td>${c.label}</td>${levels.map(l=>`<td>${candidate.rates[l][c.key]}%</td>`).join('')}</tr>`).join('')}</tbody><tfoot><tr><th>목표 / 추천 / 오차</th>${levels.map(l=>`<th>${fmt(targets[l])} / ${fmt(candidate.cuts[l])} / ${candidate.errors[l]>=0?'+':''}${fmt(candidate.errors[l])}</th>`).join('')}</tr></tfoot></table></div></div>`;}).join('');$('reverseResult').querySelectorAll('.apply-candidate').forEach(btn=>btn.addEventListener('click',()=>applyInverseCandidate(Number(btn.dataset.index))));}
+function runReverse(){const points=activeCategoryPoints(),sum=totalPoints(points),max=toNum($('cutAssessmentMax').value)??0,levels=activeLevels();if(sum<=0||Math.abs(sum-max)>.001)return alert('문항범주 배점합과 평가 만점을 먼저 일치시켜 주세요.');const targets=Object.fromEntries(levels.map(level=>[level,clamp(toNum($('reverse'+level).value)??0,0,max)]));const ordered=levels.every((level,i)=>i===0||targets[levels[i-1]]>targets[level]);if(!ordered)return alert(state.includeI?'목표값은 A/B > B/C > C/D > D/E > E/I 기준 순서로 서로 다르게 입력해 주세요.':'목표값은 A/B > B/C > C/D > D/E 순서로 서로 다르게 입력해 주세요.');activeCutExam().candidates=inverseCandidates(points,targets);activeCutExam().selectedCandidate=0;renderInverseCandidates();}
+function applyInverseCandidate(index){const exam=activeCutExam(),candidate=exam.candidates[index];if(!candidate)return;exam.selectedCandidate=index;activeLevels().forEach(level=>exam.rates[level]={...candidate.rates[level]});renderRateTable();calculateCutResults();renderInverseCandidates();}
+
+// ── 렌더링 ────────────────────────────────────────────────────────────
+function setBadge(id,text,type){const el=$(id);if(!el)return;el.textContent=text;el.className=`status ${type}`;}
+function updateExam2AutoCutDisplay(cuts){
+  const ready=!!cuts,badge=$('exam2CutStatus');setBadge('exam2CutStatus',ready?'자동 추정':'미산출',ready?'estimated':'empty');
+  ['A','B','C','D','E'].forEach(level=>{const el=$('acExam2'+level);if(!el)return;if(level==='E'&&!state.includeI){el.value='';el.placeholder='미선택';el.disabled=true;return;}el.disabled=false;el.readOnly=true;el.value=ready&&cuts[level]!==null?fmt(cuts[level]):'';el.placeholder=ready?'':'미산출';});
+}
+function updateExam2Preview(exam2){const box=$('exam2Preview');if(!box)return;if(!exam2.size){box.className='notice info';box.textContent='1차 지필 실제자료를 입력하면 예상점수 범위를 바로 표시합니다.';return;}const values=[...exam2.values()].map(v=>v.score),min=Math.min(...values),max=Math.max(...values),mean=values.reduce((s,v)=>s+v,0)/values.length;box.className='notice ok';box.textContent=`2차 지필 예상점수 ${values.length}명 · 최저 ${fmt(min)} / 평균 ${fmt(mean)} / 최고 ${fmt(max)}`;}
+function updateBadges(){
+  const examCount=parseScoreTable($('exam1Text').value).rows;setBadge('exam1Badge',examCount?'실제':'미입력',examCount?'actual':'empty');
+  [['perf1','perf1Text'],['perf2','perf2Text']].forEach(([name,textId])=>{const estimated=state.modes[name]==='estimate',count=parseScoreTable($(textId).value).rows;setBadge(name+'Badge',estimated?'1차 지필 기반 예상':count?'실제':'미입력',estimated?'estimated':count?'actual':'empty');});
+  setBadge('exam2Badge',state.modes.exam2==='linear'?'개별 선형 매핑':'일괄 보정','estimated');
+}
+function renderSummary(rows,config){
+  const cutReady=config.cutReady,dist=distributionFor(rows,config.useI),analysis=cutReady?analyzeBoundary(rows,'AB',config.cuts):{reference:null},exam1Ready=parseScoreTable($('exam1Text').value).rows>0,perf1Ready=state.modes.perf1==='actual'&&parseScoreTable($('perf1Text').value).rows>0,perf2Ready=state.modes.perf2==='actual'&&parseScoreTable($('perf2Text').value).rows>0,actualNames=[exam1Ready?'1차 지필':null,perf1Ready?'1차 수행':null,perf2Ready?'2차 수행':null].filter(Boolean),actualCount=actualNames.length,completeness=actualCount>=3?'높음':actualCount===2?'보통':'낮음',actualDetail=actualCount?`실제자료 ${actualCount}개 확보 · ${actualNames.join(', ')}`:'확보된 실제자료 없음',diff=dist.A.rate-config.targetARate;
+  $('kpiCards').innerHTML=[['유효 학생수',`${rows.length}명`,'계산 포함 학생'],['예상 A 인원',cutReady?`${dist.A.count}명`:'-',cutReady?'분할점수 기준':'2차 지필 기준 미산출'],['예상 A 비율',cutReady?`${fmt(dist.A.rate,1)}%`:'-',cutReady?`참고비율 대비 ${diff>=0?'+':''}${fmt(diff,1)}%p`:'2차 지필 기준 미산출'],['A/B 예상 경계',cutReady?(analysis.reference!==null?fmt(analysis.reference):`A컷 ${fmt(config.cuts.A)}`):'-',cutReady?`적용 A컷 ${fmt(config.cuts.A)}`:'2차 지필 기준 미산출'],['입력자료 완성도',completeness,actualDetail]].map(x=>`<div class="kpi"><div class="label">${esc(x[0])}</div><div class="value">${esc(x[1])}</div><div class="detail">${esc(x[2])}</div></div>`).join('');
+  $('distribution').innerHTML=(config.useI?['A','B','C','D','E','I']:['A','B','C','D','E']).map(g=>`<div class="dist-card g${g}"><div class="grade">${g}</div><div class="count">${cutReady?`${dist[g].count}명`:'-'}</div><div>${cutReady?`${fmt(dist[g].rate,1)}%`:'미산출'}</div><div class="bar"><span style="width:${clamp(dist[g].rate,0,100)}%"></span></div></div>`).join('');
+  $('sourceSummary').innerHTML=[['1차 지필',exam1Ready?'실제':'미입력',exam1Ready?'actual':'empty'],['1차 수행',state.modes.perf1==='estimate'?'1차 지필 기반 예상':perf1Ready?'실제':'미입력',state.modes.perf1==='estimate'?'estimated':perf1Ready?'actual':'empty'],['2차 수행',state.modes.perf2==='estimate'?'1차 지필 기반 예상':perf2Ready?'실제':'미입력',state.modes.perf2==='estimate'?'estimated':perf2Ready?'actual':'empty'],['2차 지필',state.modes.exam2==='linear'?'1차 지필 기반 선형 매핑':'1차 지필 기반 일괄 보정','estimated']].map(x=>`<div class="source-item"><b>${esc(x[0])}</b> <span class="status ${x[2]}">${esc(x[1])}</span></div>`).join('');
+}
+function renderStudents(rows){$('rowCount').textContent=`${rows.length}명`;$('rowCount').className=`status ${rows.length?'actual':'empty'}`;$('studentBody').innerHTML=rows.length?rows.map(r=>`<tr class="student-row ${r.grade==='-'?'':`g${r.grade}`}"><td>${r.rank}</td><td>${r.grade==='-'?'<span class="status empty">미산출</span>':`<span class="grade-badge g${r.grade}">${r.grade}</span>`}</td><td>${esc(r.classNo)}반</td><td>${esc(r.number)}</td><td>${fmt(r.exam1)}</td><td>${fmt(r.exam2)} <span class="status estimated">예상</span></td><td>${fmt(r.perf1)} ${state.modes.perf1==='estimate'?'<span class="status estimated">예상</span>':''}</td><td>${fmt(r.perf2)} ${state.modes.perf2==='estimate'?'<span class="status estimated">예상</span>':''}</td><td><b>${fmt(r.total)}</b></td></tr>`).join(''):'<tr><td colspan="9">1차 지필 실제자료를 입력해 주세요.</td></tr>';}
+function renderMissing(missing){const card=$('missingCard');if(!missing.length){card.classList.add('hidden');return;}card.classList.remove('hidden');$('missingNotice').innerHTML=`<b>⚠ 일부 성적이 없어 계산에서 제외된 학생 ${missing.length}명</b><br>${missing.slice(0,30).map(m=>`${esc(m.classNo)}반 ${esc(m.number)}번 — ${esc(m.items.join(', '))} 누락`).join('<br>')}${missing.length>30?`<br>외 ${missing.length-30}명`:''}`;}
+function renderBoundary(rows,cuts,useI=false,ready=true){
+  if(!ready){$('boundaryTabs').innerHTML='';$('boundaryMetrics').innerHTML='<div class="notice warn">1차 지필 실제자료와 기준값이 갖춰지면 경계 분석을 표시합니다.</div>';$('boundaryBody').innerHTML='<tr><td colspan="6">분할점수 미산출</td></tr>';return;}
+  const boundaries=useI?['AB','BC','CD','DE','EI']:['AB','BC','CD','DE'];if(!boundaries.includes(state.boundary))state.boundary='AB';$('boundaryTabs').innerHTML=boundaries.map(b=>`<button data-boundary="${b}" class="${state.boundary===b?'active':''}">${b[0]}/${b[1]} 경계 보기</button>`).join('');$('boundaryTabs').querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{state.boundary=btn.dataset.boundary;renderBoundary(rows,cuts,useI,true);}));const a=analyzeBoundary(rows,state.boundary,cuts),dense=a.within05>=5||a.within10>=10;
+  $('boundaryMetrics').innerHTML=[['적용 분할점수',fmt(a.cut)],[`${a.upper} 중 최저`,fmt(a.upperMin)],[`${a.lower} 중 최고`,fmt(a.lowerMax)],['두 학생 점수차',fmt(a.gap)],['참고 경계점',fmt(a.reference)]].map(x=>`<div class="metric"><span>${esc(x[0])}</span><b>${esc(x[1])}</b></div>`).join('')+`<div class="metric"><span>±0.5점 이내</span><b>${a.within05}명</b></div><div class="metric"><span>±1.0점 이내</span><b>${a.within10}명</b></div><div class="metric"><span>경계 동점</span><b>${a.ties}명</b></div>${dense?'<div class="metric density"><span>분포 안내</span><b>경계 밀집</b></div>':''}`;
+  $('boundaryBody').innerHTML=a.nearby.length?a.nearby.map(r=>`<tr><td>${r.rank}</td><td>${esc(r.classNo)}반</td><td>${esc(r.number)}</td><td>${fmt(r.total)}</td><td><span class="grade-badge g${r.grade}">${r.grade}</span></td><td>${r.total-a.cut>=0?'+':''}${fmt(r.total-a.cut)}</td></tr>`).join(''):'<tr><td colspan="6">계산할 자료가 없습니다.</td></tr>';
+}
+function renderSensitivity(base,config){if(!config.cutReady){$('sensitivityBody').innerHTML='<tr><td colspan="5">분할점수가 산출되면 민감도 분석을 표시합니다.</td></tr>';return;}const offsets=[-4,-2,0,2,4];$('sensitivityBody').innerHTML=base.exam1Count?offsets.map(offset=>{const result=buildSemesterRows(offset),dist=distributionFor(result.rows,config.useI),a=analyzeBoundary(result.rows,'AB',config.cuts),label=offset===0?'기준':`${offset>0?'+':''}${offset}점`;return`<tr><td>${label}</td><td>${dist.A.count}명</td><td>${fmt(dist.A.rate,1)}%</td><td>${fmt(a.upperMin)} / ${fmt(a.lowerMax)}</td><td>${fmt(a.reference)}</td></tr>`;}).join(''):'<tr><td colspan="5">계산할 자료가 없습니다.</td></tr>';}
+function updateValidation(config){
+  const sum=Object.values(config.weights).reduce((s,v)=>s+v,0),maxValid=Object.values(config.maxes).every(v=>v>0),levels=activeLevels(),knownValid=['exam1','perf1','perf2'].every(key=>levels.every(level=>config.assessmentCuts[key][level]!==null)&&validDescending(config.assessmentCuts[key],config.maxes[key],config.useI)),exam2Valid=config.assessmentCuts.exam2&&validDescending(config.assessmentCuts.exam2,config.maxes.exam2,config.useI),weightValid=Math.abs(sum-100)<.001,weight=$('weightNotice');
+  weight.className=`notice ${weightValid&&maxValid&&knownValid?'ok':'bad'}`;weight.innerHTML=`<span class="weight-total ${weightValid?'ok':'bad'}">반영점수 합계 ${fmt(sum,1)}점</span> · ${!weightValid?'합계를 100점으로 맞춰 주세요.':!maxValid?'평가 만점은 0보다 커야 합니다.':!knownValid?'현재 확보된 평가의 분할점수 순서를 확인해 주세요.':!exam2Valid?'2차 지필 기준은 1차 지필 실제자료 입력 후 자동 추정됩니다.':'평가별 분할점수와 학생점수를 같은 척도로 환산합니다.'}`;
+  const valid=weightValid&&maxValid&&knownValid&&!!exam2Valid&&levels.every((level,i)=>i===0||config.cuts[levels[i-1]]>config.cuts[level]);const cut=$('cutValidation');['A','B','C','D'].forEach(level=>$('semCut'+level).textContent=valid?fmt(config.cuts[level]):'-');$('semCutE').textContent=config.useI?(valid?fmt(config.cuts.E):'-'):'미선택';cut.className=`notice ${valid?'ok':exam2Valid?'bad':'warn'}`;cut.textContent=valid?'평가요소별 분할점수를 반영점수 척도로 환산해 학기말 기준을 자동 산출했습니다.':!exam2Valid?'1차 지필 실제자료를 입력하면 2차 지필 예상 기준이 자동 산출됩니다.':'평가별 만점·반영점수·분할점수 입력을 확인해 주세요.';return valid;
+}
+function calculateAndRender(){updateBadges();const result=buildSemesterRows(),valid=updateValidation(result.config);state.rows=result.rows;state.missing=result.missing;if(!result.exam1Count){$('resultNotice').className='notice info';$('resultNotice').textContent='1차 지필 실제자료를 입력해 주세요.';}else if(!valid){$('resultNotice').className='notice warn';$('resultNotice').textContent='예상총점은 계산되지만 학기말 성취도 기준을 산출하려면 분할점수 입력 상태를 확인해 주세요.';}else{$('resultNotice').className='notice ok';$('resultNotice').textContent=`${result.rows.length}명의 학기말 예상총점과 성취도 분포를 계산했습니다.${result.config.useI?' I는 E/I 기준 미만을 예상 표시한 값입니다.':''}`;}renderSummary(result.rows,result.config);renderStudents(result.rows);renderMissing(result.missing);renderBoundary(result.rows,result.config.cuts,result.config.useI,result.config.cutReady);renderSensitivity(result,result.config);}
+
+// ── CSV ───────────────────────────────────────────────────────────────
+function exportCSV(){
+  if(!state.rows.length)return alert('내보낼 계산 결과가 없습니다.');if(!confirm('CSV 파일에는 학생 성적 정보가 포함됩니다. 학교의 개인정보 보호 기준에 따라 관리하시겠습니까?'))return;const perf1Status=state.modes.perf1==='actual'?'실제':'1차 지필 기반 예상',perf2Status=state.modes.perf2==='actual'?'실제':'1차 지필 기반 예상',exam2Method=state.modes.exam2==='linear'?'1차 지필 기반 개별 선형 매핑':'1차 지필 기반 일괄 보정',header=['석차','성취도','반','번호','1차 지필','1차 수행','1차 수행 자료상태','2차 수행','2차 수행 자료상태','2차 지필 예상','2차 지필 예상방식','학기말 예상총점'],body=state.rows.map(r=>[r.rank,r.grade,r.classNo,r.number,r.exam1,r.perf1,perf1Status,r.perf2,perf2Status,r.exam2,exam2Method,r.total]),csv=[header,...body].map(row=>row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n'),blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='학기말_성취도_예측_V2.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+// ── 상호작용/초기화 ───────────────────────────────────────────────────
+function switchMode(component,mode){state.modes[component]=mode;document.querySelectorAll(`.mode-switch[data-component="${component}"] button`).forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===mode));if(component==='perf1'||component==='perf2'){$(component+'Actual').classList.toggle('hidden',mode!=='actual');$(component+'Estimate').classList.toggle('hidden',mode!=='estimate');}else{$('exam2Offset').classList.toggle('hidden',mode!=='offset');$('exam2Linear').classList.toggle('hidden',mode!=='linear');}calculateAndRender();}
+function renderCutEditor(){const exam=activeCutExam();$('cutMethod').querySelectorAll('button').forEach(btn=>btn.classList.toggle('active',btn.dataset.cutMethod===exam.method));$('simpleMethod').classList.toggle('hidden',exam.method!=='simple');$('ebelMethod').classList.toggle('hidden',exam.method!=='ebel');renderSimplePointRows();renderItemRows();renderRateTable();calculateCutResults();$('reverseResult').innerHTML=exam.candidates.length?'역산 조건이 변경되었을 수 있습니다. 후보 찾기를 다시 실행해 주세요.':'';}
+function applyIMode(include){state.includeI=include;document.querySelectorAll('#iModeSwitch button').forEach(btn=>btn.classList.toggle('active',(btn.dataset.iMode==='on')===include));document.querySelectorAll('[data-i-default]').forEach(input=>{input.disabled=!include;if(include){if(input.value==='')input.value=input.dataset.iDefault??'';input.placeholder='';}else{input.value='';input.placeholder='미선택';}});const e2=$('acExam2E');if(e2){e2.disabled=!include;if(!include){e2.value='';e2.placeholder='미선택';}}$('reverseE').disabled=!include;if(!include){$('reverseE').value='';$('reverseE').placeholder='미선택';activeCutExam().rates.E=Object.fromEntries(CATEGORIES.map(c=>[c.key,null]));}else{if(!$('reverseE').value)$('reverseE').value='20';$('reverseE').placeholder='';}invalidateInverse();renderRateTable();calculateCutResults();calculateAndRender();}
+function resetAll(){if(!confirm('입력한 성적자료와 모든 설정을 초기값으로 되돌릴까요?'))return;document.querySelectorAll('input:not([type="file"]),textarea').forEach(control=>{control.value=control.defaultValue;});document.querySelectorAll('input[type="file"]').forEach(control=>{control.value='';});document.querySelectorAll('select').forEach(select=>{const index=[...select.options].findIndex(option=>option.defaultSelected);select.selectedIndex=index>=0?index:0;});state.modes={perf1:'actual',perf2:'actual',exam2:'offset'};state.includeI=false;state.cutExam=newCutExam();state.boundary='AB';state.rows=[];state.missing=[];state.itemCuts={A:null,B:null,C:null,D:null,E:null};document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.panel==='semesterPanel'));document.querySelectorAll('.panel').forEach(panel=>panel.classList.toggle('active',panel.id==='semesterPanel'));renderCutEditor();switchMode('perf1','actual');switchMode('perf2','actual');switchMode('exam2','offset');updateDeltaMeaning();applyIMode(false);}
+function updateDeltaMeaning(){const delta=clamp(toNum($('exam2Delta').value)??0,-30,30);$('exam2Delta').value=delta;$('exam2DeltaRange').value=delta;const meaning=delta>0?`+${delta}점: 모든 학생의 1차 지필 점수에 같은 보정값을 더합니다.`:delta<0?`${delta}점: 모든 학생의 1차 지필 점수에서 같은 보정값을 뺍니다.`:'0점: 1차 지필 점수를 그대로 2차 지필 예상점수로 사용합니다.';$('deltaMeaning').textContent=meaning;}
+const scheduleCalculate=debounce(calculateAndRender,350);
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.panel').forEach(panel=>panel.classList.toggle('active',panel.id===btn.dataset.panel));}));
+document.querySelectorAll('#iModeSwitch button').forEach(btn=>btn.addEventListener('click',()=>applyIMode(btn.dataset.iMode==='on')));
+document.querySelectorAll('.mode-switch button').forEach(btn=>btn.addEventListener('click',()=>switchMode(btn.closest('.mode-switch').dataset.component,btn.dataset.mode)));
+document.querySelectorAll('.score-text,.live').forEach(el=>el.addEventListener('input',scheduleCalculate));
+document.querySelectorAll('.clear-input').forEach(btn=>btn.addEventListener('click',()=>{if(confirm('이 입력자료를 비울까요?')){$(btn.dataset.target).value='';calculateAndRender();}}));
+[['fileExam1','exam1Text','statusExam1'],['filePerf1','perf1Text','statusPerf1'],['filePerf2','perf2Text','statusPerf2']].forEach(([file,text,status])=>$(file).addEventListener('change',()=>handleFileUpload($(file),text,status)));
+$('exam2DeltaRange').addEventListener('input',()=>{$('exam2Delta').value=$('exam2DeltaRange').value;updateDeltaMeaning();scheduleCalculate();});$('exam2Delta').addEventListener('input',()=>{updateDeltaMeaning();scheduleCalculate();});
+$('calculateBtn').addEventListener('click',calculateAndRender);$('exportBtn').addEventListener('click',exportCSV);$('resetBtn').addEventListener('click',resetAll);
+$('addItemBtn').addEventListener('click',()=>{const exam=activeCutExam();if(exam.items.length>=50)return;exam.items.push({number:exam.items.length+1,point:1,type:'choice',difficulty:'normal'});invalidateInverse();renderItemRows();renderRateTable();calculateCutResults();});$('removeItemBtn').addEventListener('click',()=>{const exam=activeCutExam();if(exam.items.length>1)exam.items.pop();invalidateInverse();renderItemRows();renderRateTable();calculateCutResults();});
+$('cutMethod').querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{activeCutExam().method=btn.dataset.cutMethod;invalidateInverse();$('cutMethod').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===btn));$('simpleMethod').classList.toggle('hidden',btn.dataset.cutMethod!=='simple');$('ebelMethod').classList.toggle('hidden',btn.dataset.cutMethod!=='ebel');renderRateTable();calculateCutResults();}));
+$('cutAssessmentMax').addEventListener('input',()=>{invalidateInverse();calculateCutResults();});LEVELS.forEach(level=>$('reverse'+level).addEventListener('input',invalidateInverse));$('reverseBtn').addEventListener('click',runReverse);
+renderCutEditor();updateDeltaMeaning();applyIMode(false);
 </script>
 </body>
 </html>
