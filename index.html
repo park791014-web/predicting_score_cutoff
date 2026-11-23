@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="현재 성적과 예상 평가자료를 바탕으로 학기말 성취도 분포와 경계 학생을 사전에 살펴보는 교사용 시뮬레이션 도구입니다." />
-  <meta property="og:title" content="분할점수 산출컷 예측기 V2.0.1" />
+  <meta property="og:title" content="분할점수 산출컷 예측기 V2.1.0" />
   <meta property="og:description" content="문항분석과 현재 성적 자료로 학기말 A~E 분포, 경계점수와 경계 주변 학생을 예측합니다." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://predicting-score-cutoff.vercel.app/" />
   <link rel="canonical" href="https://predicting-score-cutoff.vercel.app/" />
-  <title>분할점수 산출컷 예측기 V2.0.1</title>
+  <title>분할점수 산출컷 예측기 V2.1.0</title>
   <style>
     :root{
       --bg:#f4f6f8;--surface:#fff;--surface-2:#f8fafc;--ink:#172033;--muted:#5f6b7a;--line:#d8dee8;
@@ -81,6 +81,11 @@
     .footer-note{color:var(--muted);font-size:11px;margin-top:12px}
     .app-footer{display:flex;justify-content:flex-end;align-items:center;gap:7px;color:var(--muted);font-size:11px;margin-top:22px;padding:10px 2px 0;border-top:1px solid var(--line)}
     .app-footer .brand{font-weight:800;color:#46556b}
+    #referenceBands input,#scenarioBoundaries input{min-width:5.5rem;max-width:8rem}
+    #referenceBands input[readonly]{background:var(--gray-soft);color:var(--muted)}
+    #scenarioBoundaries small{display:block;max-width:22rem;white-space:normal;color:var(--muted);margin:3px auto}
+    #scenarioBoundaries button{display:block;margin:4px auto}
+    #semesterPlanner .btn:disabled{opacity:.55;cursor:default}
     @media(max-width:1050px){.section-grid,.section-grid.three{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.distribution{grid-template-columns:repeat(3,1fr)}.boundary-metrics{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:700px){.wrap{padding:18px 12px 40px}.hero{display:block}.version{display:inline-flex;margin-top:10px}.main-tabs{grid-template-columns:1fr}.field-grid,.field-grid.five,.field-grid.three{grid-template-columns:repeat(2,1fr)}.kpis,.distribution,.cut-results{grid-template-columns:1fr 1fr}.card-body{padding:13px}.card-head{padding:12px 13px}.boundary-metrics{grid-template-columns:1fr 1fr}}
   </style>
@@ -89,7 +94,7 @@
 <main class="wrap">
   <header class="hero">
     <div>
-      <h1>분할점수 산출컷 예측기 V2.0.1</h1>
+      <h1>분할점수 산출컷 예측기 V2.1.0</h1>
       <p class="sub">문항분석 및 현재까지의 성적 자료를 바탕으로 학기말 성취도 분포를 사전에 예측하는 참고 도구입니다. 분할점수의 최종 결정은 평가 문항의 성취수준과 학교 학업성적관리 기준을 종합하여 판단해야 합니다.</p>
     </div>
     <span class="version">브라우저 내부 처리</span>
@@ -144,7 +149,7 @@
     <div class="purpose">현재 확보된 실제 점수와 아직 확정되지 않은 평가요소의 예상값을 함께 사용해 학기말 분포를 살펴봅니다. 특정 비율을 강제로 맞추는 기능이 아닙니다.</div>
 
     <details class="card" open><summary>1. 현재 확보된 평가요소의 만점·반영점수·분할점수</summary><div class="card-body">
-      <p class="card-note">2차 지필은 아직 실시 전이므로 만점과 반영점수만 입력합니다. A~D(E/I) 기준은 아래의 2차 지필 예상점수 방식에 따라 자동 추정되며 직접 입력할 수 없습니다.</p>
+      <p class="card-note">2차 지필 기준은 예상점수 설정에 따라 자동 추정합니다. 화면 아래의 <a href="#semesterPlanner">2차 지필 분할점수 역산 보조</a>에서 별도의 기준으로 분포를 비교할 수 있습니다.</p>
       <div class="table-wrap" style="margin-top:10px"><table class="assessment-cut-table"><thead><tr><th>평가요소</th><th>만점</th><th>반영점수</th><th>A</th><th>B</th><th>C</th><th>D</th><th class="semester-e-col">E/I 기준</th></tr></thead><tbody>
         <tr><td>1차 지필</td><td><input id="maxExam1" class="live" type="number" value="100" min="0.1" step="0.1"></td><td><input id="wExam1" class="live" type="number" value="30" step="0.1"></td><td><input id="acExam1A" class="live" type="number" value="70" step="0.1"></td><td><input id="acExam1B" class="live" type="number" value="57" step="0.1"></td><td><input id="acExam1C" class="live" type="number" value="42" step="0.1"></td><td><input id="acExam1D" class="live" type="number" value="30" step="0.1"></td><td class="semester-e-col"><input id="acExam1E" class="live" type="number" value="" data-i-default="15" placeholder="미선택" disabled step="0.1"></td></tr>
         <tr><td><b>2차 지필</b><br><span class="status empty" id="exam2CutStatus">미산출</span></td><td><input id="maxExam2" class="live" type="number" value="100" min="0.1" step="0.1"></td><td><input id="wExam2" class="live" type="number" value="30" step="0.1"></td><td><input id="acExam2A" type="number" value="" placeholder="미산출" readonly></td><td><input id="acExam2B" type="number" value="" placeholder="미산출" readonly></td><td><input id="acExam2C" type="number" value="" placeholder="미산출" readonly></td><td><input id="acExam2D" type="number" value="" placeholder="미산출" readonly></td><td class="semester-e-col"><input id="acExam2E" type="number" value="" placeholder="미선택" readonly disabled></td></tr>
@@ -152,7 +157,6 @@
         <tr><td>2차 수행</td><td><input id="maxPerf2" class="live" type="number" value="100" min="0.1" step="0.1"></td><td><input id="wPerf2" class="live" type="number" value="20" step="0.1"></td><td><input id="acPerf2A" class="live" type="number" value="80" step="0.1"></td><td><input id="acPerf2B" class="live" type="number" value="60" step="0.1"></td><td><input id="acPerf2C" class="live" type="number" value="40" step="0.1"></td><td><input id="acPerf2D" class="live" type="number" value="20" step="0.1"></td><td class="semester-e-col"><input id="acPerf2E" class="live" type="number" value="" data-i-default="0" placeholder="미선택" disabled step="0.1"></td></tr>
       </tbody></table></div>
       <div id="weightNotice" class="notice info"><span class="weight-total">반영점수 합계를 확인합니다.</span></div>
-      <p class="footer-note">2차 지필 A~D(E/I)는 1차 지필 기반 예상점수 변환을 같은 방식으로 적용하여 자동 추정합니다. 직접 입력값이 아닙니다.</p>
     </div></details>
 
     <details class="card" open><summary>2. 1차 지필 실제자료</summary><div class="card-body">
@@ -196,35 +200,419 @@
     <details class="card" open><summary>6. 학기말 분할점수 자동 산출</summary><div class="card-body">
       <p class="card-note">학기말 분할점수(L) = Σ[(평가별 분할점수(L) ÷ 평가 만점) × 평가 반영점수]</p>
       <div class="cut-results" id="semesterCutResults"><div class="cut-result"><span>A 이상</span><b id="semCutA">-</b></div><div class="cut-result"><span>B 이상</span><b id="semCutB">-</b></div><div class="cut-result"><span>C 이상</span><b id="semCutC">-</b></div><div class="cut-result"><span>D 이상</span><b id="semCutD">-</b></div><div class="cut-result"><span>E/I 기준</span><b id="semCutE">-</b></div></div>
-      <div style="max-width:240px;margin-top:12px"><label>A 참고비율 (%)</label><input id="targetARate" class="live" type="number" value="23" step="0.1"></div>
       <div id="cutValidation" class="notice ok">학생 순위가 아니라 평가요소별 분할점수를 반영점수 척도로 환산해 자동 산출합니다.</div>
     </div></details>
 
-    <div class="card" id="resultsCard"><div class="card-head"><div><h2>핵심 결과</h2><p class="card-note">분할점수를 바꾸면 약 350ms 후 자동 갱신됩니다.</p></div><div class="actions"><button class="btn" id="calculateBtn">지금 계산</button><button class="btn secondary" id="exportBtn">CSV 내보내기</button><button class="btn danger" id="resetBtn">전체 초기화</button></div></div><div class="card-body">
+    <div class="card" id="resultsCard"><div class="card-head"><div><h2>핵심 결과 · 적용 컷 기준</h2><p class="card-note">분할점수를 바꾸면 약 350ms 후 자동 갱신됩니다.</p></div><div class="actions"><button class="btn" id="calculateBtn">지금 계산</button><button class="btn secondary" id="exportBtn">CSV 내보내기</button><button class="btn danger" id="resetBtn">전체 초기화</button></div></div><div class="card-body">
       <div id="resultNotice" class="notice info">1차 지필 실제자료를 입력해 주세요.</div>
       <div id="kpiCards" class="kpis" style="margin-top:13px"></div>
       <div id="distribution" class="distribution"></div>
+      <section id="referenceSection" aria-labelledby="referenceHeading" style="margin-top:18px">
+        <h3 id="referenceHeading">참고 인원별 학기말 점수대</h3>
+        <div class="actions"><label for="referenceUnit">참고 분포 입력</label>
+          <select id="referenceUnit" style="width:auto"><option value="rate">비율 (%)</option><option value="count">인원 (명)</option></select>
+          <a href="#semesterPlanner">2차 지필 컷 역산하기 ↓</a>
+        </div>
+        <p class="card-note">유효 학생을 예상총점순으로 나눕니다. 비율 입력 시 누적 인원을 반올림하며 마지막 성취도에는 남은 인원을 배정합니다. 두 구간에 걸친 동점자는 모두 상위 참고 성취도로 표시합니다.</p>
+        <div class="table-wrap"><table><thead><tr><th>성취도</th><th>참고 입력</th><th>참고 인원 · 비율</th><th>적용 컷 인원 · 비율</th><th>참고 순번</th><th>학기말 예상총점 범위</th></tr></thead><tbody id="referenceBands"></tbody></table></div>
+        <p id="referenceNotice" class="card-note" aria-live="polite"></p>
+      </section>
       <div style="margin-top:14px"><h3>예측자료 구성</h3><div id="sourceSummary" class="source-summary"></div></div>
     </div></div>
 
     <div id="missingCard" class="card hidden"><div class="card-head"><h2>누락학생 안내</h2></div><div class="card-body"><div id="missingNotice" class="notice warn"></div></div></div>
 
-    <div class="card"><div class="card-head"><div><h2>경계 학생 집중 분석</h2><p class="card-note">선택한 분할점수 전후 학생과 점수 밀집도를 표시합니다.</p></div></div><div class="card-body"><div id="boundaryTabs" class="boundary-tabs"></div><div id="boundaryMetrics" class="boundary-metrics"></div><div class="table-wrap"><table><thead><tr><th>석차</th><th>반</th><th>번호</th><th>학기말 예상총점</th><th>성취도</th><th>경계와 차이</th></tr></thead><tbody id="boundaryBody"><tr><td colspan="6">계산할 자료가 없습니다.</td></tr></tbody></table></div></div></div>
+    <div class="card"><div class="card-head"><div><h2>경계 학생 집중 분석</h2><p class="card-note">선택한 성취도 기준으로 경계 전후의 학생과 점수 밀집도를 표시합니다.</p></div></div><div class="card-body"><div class="actions" style="margin-bottom:10px"><label for="boundaryBasis">성취도 기준</label><select id="boundaryBasis" style="width:auto"><option value="reference">참고비율·인원 기준</option><option value="applied">적용 컷 기준</option></select></div><div id="boundaryTabs" class="boundary-tabs"></div><div id="boundaryMetrics" class="boundary-metrics"></div><div class="table-wrap"><table><thead><tr><th>석차</th><th>반</th><th>번호</th><th>학기말 예상총점</th><th>성취도</th><th>경계와 차이</th></tr></thead><tbody id="boundaryBody"><tr><td colspan="6">계산할 자료가 없습니다.</td></tr></tbody></table></div></div></div>
 
-    <div class="card"><div class="card-head"><div><h2>전체 학생 학기말 예상총점 정렬표</h2><p class="card-note">예상자료 열에는 자료상태가 함께 표시됩니다.</p></div><span id="rowCount" class="status empty">0명</span></div><div class="card-body"><div class="table-wrap tall"><table id="studentTable"><thead><tr><th>석차</th><th>성취도</th><th>반</th><th>번호</th><th>1차 지필</th><th>2차 지필(예상)</th><th>1차 수행</th><th>2차 수행</th><th>학기말 예상총점</th></tr></thead><tbody id="studentBody"><tr><td colspan="9">1차 지필 실제자료를 입력해 주세요.</td></tr></tbody></table></div><p class="footer-note">실제 NEIS 합산점수 및 소수점 처리 방식은 학교 학업성적관리규정에 따라 다를 수 있으므로 본 결과는 사전 예측 및 협의 참고용입니다.</p></div></div>
+    <div class="card"><div class="card-head"><div><h2>전체 학생 학기말 예상총점 정렬표</h2><p class="card-note">참고 성취도는 입력한 비율·인원의 학기말 최저점으로, 적용 컷 성취도는 현재 평가별 분할점수로 판정합니다.</p></div><span id="rowCount" class="status empty">0명</span></div><div class="card-body"><div class="table-wrap tall"><table id="studentTable"><thead><tr><th>석차</th><th>참고 성취도</th><th>적용 컷 성취도</th><th>반</th><th>번호</th><th>1차 지필</th><th>2차 지필(예상)</th><th>1차 수행</th><th>2차 수행</th><th>학기말 예상총점</th></tr></thead><tbody id="studentBody"><tr><td colspan="10">1차 지필 실제자료를 입력해 주세요.</td></tr></tbody></table></div><p class="footer-note">실제 NEIS 합산점수 및 소수점 처리 방식은 학교 학업성적관리규정에 따라 다를 수 있으므로 본 결과는 사전 예측 및 협의 참고용입니다.</p></div></div>
 
     <div class="card"><div class="card-head"><div><h2>2차 지필 조건 민감도 분석</h2><p class="card-note">현재 예상조건에서 점수가 ±2, ±4점 달라질 때의 결과입니다. +는 학생 예상점수 상승, -는 하락을 뜻합니다.</p></div></div><div class="card-body"><div class="table-wrap"><table><thead><tr><th>2차 지필 조건</th><th>A 인원</th><th>A 비율</th><th>A 최저 / B 최고</th><th>A/B 관측 경계</th></tr></thead><tbody id="sensitivityBody"><tr><td colspan="5">계산할 자료가 없습니다.</td></tr></tbody></table></div></div></div>
+    <section class="card" id="semesterPlanner" aria-labelledby="plannerHeading">
+      <div class="card-head"><h2 id="plannerHeading">2차 지필 분할점수 역산 보조</h2><a href="#referenceSection">참고 인원 수정 ↑</a></div>
+      <div class="card-body">
+        <p>각 참고 성취도의 학기말 예상총점 범위에서 최저점을 가져옵니다. 이 점수에서 1차 지필·수행평가의 환산 분할점수를 빼고 2차 지필 원점수로 역산합니다.</p>
+        <div class="table-wrap" style="margin:12px 0"><table><thead><tr><th>경계</th><th>역산 목표(구간 최저) / 다음 순번 점수<br>학기말 예상총점</th><th>역산한 2차 지필 컷</th><th>현재 적용 컷</th><th>비교할 2차 지필 컷</th></tr></thead><tbody id="scenarioBoundaries"></tbody></table></div>
+        <div class="actions">
+          <button class="btn secondary" id="fillSuggestedCuts">역산값 가져오기</button><button class="btn" id="applyScenario">입력한 컷으로 비교</button>
+          <button class="btn secondary" id="clearScenario">자동 추정으로 복귀</button>
+          <button class="btn secondary" id="toNeis">입력한 컷을 정답률 역산에 사용</button>
+        </div>
+        <p id="scenarioNotice" class="notice info" aria-live="polite"></p>
+        <p id="scenarioOutcome" class="card-note"></p>
+        <div id="semesterNeisHost"></div>
+      </div>
+    </section>
   </section>
   <footer class="app-footer" aria-label="제작 및 버전 정보">
     <span>Designed by <span class="brand">Mordenai</span></span>
     <span aria-hidden="true">·</span>
-    <span>V2.0.1</span>
+    <span>V2.1.0</span>
   </footer>
 </main>
 <dialog id="sheetDialog" aria-labelledby="sheetDialogTitle"><form method="dialog" class="dialog-body"><h2 id="sheetDialogTitle">사용할 시트 선택</h2><p class="card-note">성적표가 있는 시트를 선택해 주세요.</p><label for="sheetSelect">시트</label><select id="sheetSelect"></select><div class="dialog-actions"><button class="btn secondary" value="cancel">취소</button><button class="btn" value="confirm">선택</button></div></form></dialog>
 
 <script src="./xlsx.full.min.js"></script>
 <script>
+function buildReferenceBands(rows, rates, config) {
+  const scale = 1000;
+  const totals = rows.map(row => row?.total).filter(Number.isFinite).sort((a, b) => b - a);
+  const grades = Object.hasOwn(rates, 'I') ? ['A', 'B', 'C', 'D', 'E', 'I'] : ['A', 'B', 'C', 'D', 'E'];
+  const { weights, maxes, assessmentCuts } = config;
+  const n = totals.length;
+  const feasibleRanges = new Map();
+  const knownCutsReady = validPlanningBase(config);
+
+  function findBoundary(grade, end, target) {
+    const upper = end > 0 ? totals[end - 1] : null;
+    const lower = end < n ? totals[end] : null;
+    const result = (examCut, note) => ({ upper, lower, examCut, note });
+
+    if (!n) return result(null, '학기말 예상총점이 없어 참고 컷을 계산할 수 없습니다.');
+    if (target === null) return result(null, '참고 인원이 0명이므로 이 성취도의 학기말 최저점이 없습니다.');
+    if (target === lower) {
+      return result(null, '경계에 학기말 예상총점 동점자가 있어 분리할 수 없습니다.');
+    }
+    if (!(weights.exam2 > 0)) {
+      return result(null, '2차 지필 반영점수가 0점이면 원점수 컷을 역산할 수 없습니다.');
+    }
+    if (!knownCutsReady) return result(null, '1차 지필과 두 수행평가의 분할점수를 확인해 주세요.');
+
+    const maxRaw = maxes.exam2;
+    let maxTick = Math.floor(maxRaw * scale);
+    if (!Number.isSafeInteger(maxTick + 1)) {
+      return result(null, '2차 지필 만점을 소수 셋째 자리까지 정확히 계산할 수 없습니다.');
+    }
+    if ((maxTick + 1) / scale <= maxRaw) maxTick++;
+    if (maxTick / scale > maxRaw) maxTick--;
+
+    const rawCuts = { exam1: assessmentCuts.exam1[grade], exam2: 0,
+      perf1: assessmentCuts.perf1[grade], perf2: assessmentCuts.perf2[grade] };
+    const semesterAt = tick => calculateSemesterValue({ ...rawCuts, exam2: tick / scale }, maxes, weights);
+
+    // Search the same rounded semester scores used when the cuts are applied.
+    function firstMatching(predicate) {
+      let lo = 0, hi = maxTick + 1;
+      while (lo < hi) {
+        const mid = lo + Math.floor((hi - lo) / 2);
+        if (predicate(semesterAt(mid))) hi = mid;
+        else lo = mid + 1;
+      }
+      return lo;
+    }
+    const first = firstMatching(total => total >= target);
+    const last = firstMatching(total => total > target) - 1;
+    if (first > last) {
+      return result(null, '2차 지필 0점~만점 범위의 소수 셋째 자리 원점수로 이 학기말 최저점을 정확히 재현할 수 없습니다.');
+    }
+    feasibleRanges.set(grade, { first, last });
+
+    const baseline = Object.keys(weights).reduce((sum, key) => sum +
+      (rawCuts[key] / maxes[key]) * weights[key], 0);
+    const idealTick = Math.round(((target - baseline) / weights.exam2) * maxRaw * scale);
+    const tick = Math.min(last, Math.max(first, idealTick));
+    return result(tick / scale, '이 성취도의 학기말 최저점을 정확히 재현하는 참고 컷입니다.');
+  }
+
+  let cumulative = 0, previous = 0;
+  const bands = grades.map((grade, i) => {
+    const rate = rates[grade];
+    cumulative += rate;
+    const exactCount = n * cumulative / 100;
+    // A decimal cumulative rate can land just below its mathematical half-integer.
+    const half = Math.floor(exactCount) + 0.5;
+    const roundingTolerance = 4 * Number.EPSILON * Math.max(1, exactCount);
+    const rounded = Math.round(Math.abs(exactCount - half) <= roundingTolerance ? half : exactCount);
+    const end = i === grades.length - 1 ? n : rounded;
+    const count = end - previous;
+    const low = count ? totals[end - 1] : null;
+    const band = {
+      grade, rate, count,
+      start: count ? previous + 1 : null,
+      end: count ? end : null,
+      high: count ? totals[previous] : null,
+      low,
+      boundary: i === grades.length - 1 ? null : findBoundary(grade, end, low)
+    };
+    previous = end;
+    return band;
+  });
+
+  // Preserve each exact semester target while finding strictly descending raw cuts.
+  const cutBands = bands.slice(0, -1);
+  if (feasibleRanges.size === cutBands.length) {
+    const minimumTicks = [];
+    let required = 0;
+    let conflict = -1;
+    for (let i = cutBands.length - 1; i >= 0; i--) {
+      const { first, last } = feasibleRanges.get(cutBands[i].grade);
+      minimumTicks[i] = Math.max(first, required);
+      if (minimumTicks[i] > last) {
+        conflict = i;
+        break;
+      }
+      required = minimumTicks[i] + 1;
+    }
+    if (conflict === -1) {
+      let limit = Infinity;
+      cutBands.forEach(({ grade, boundary }, i) => {
+        const preferred = Math.round(boundary.examCut * scale);
+        const tick = Math.min(limit, feasibleRanges.get(grade).last, Math.max(minimumTicks[i], preferred));
+        if (tick !== preferred) {
+          boundary.examCut = tick / scale;
+          boundary.note = '같은 학기말 최저점을 유지하면서 2차 지필 컷이 내림차순이 되도록 조정했습니다.';
+        }
+        limit = tick - 1;
+      });
+    } else {
+      cutBands[conflict].boundary.note += ' 각 학기말 최저점을 유지한 채 모든 2차 지필 컷을 내림차순으로 맞출 수 없어 개별 역산값을 표시합니다.';
+    }
+  }
+  return bands;
+}
+
+// A scenario stores only the cut scores the teacher explicitly applied.
+let scenarioCuts = null;
+let draftEdited = false;
+let latestSuggestions = [];
+let lastSemesterResult = null;
+const planningGrades = ['A', 'B', 'C', 'D', 'E', 'I'];
+const planningText = value => Number.isFinite(value) ? String(+value.toFixed(3)) : '—';
+
+function validPlanningCuts(cuts, max, useI) {
+  const levels = useI ? LEVELS : LEVELS.slice(0, 4);
+  return levels.every(level => Number.isFinite(cuts?.[level]) && cuts[level] >= 0 && cuts[level] <= max)
+    && validDescending(cuts, max, useI);
+}
+
+function validSemesterScale(config) {
+  const weights = Object.values(config.weights);
+  return weights.every(weight => weight >= 0)
+    && Math.abs(weights.reduce((sum, value) => sum + value, 0) - 100) < .001
+    && Object.values(config.maxes).every(max => max > 0);
+}
+
+function validPlanningBase(config) {
+  return validSemesterScale(config)
+    && ['exam1', 'perf1', 'perf2'].every(key => validPlanningCuts(config.assessmentCuts[key], config.maxes[key], config.useI));
+}
+
+function referenceInput(grade, unit) {
+  return $('target' + grade + (unit === 'rate' ? 'Rate' : 'Count'));
+}
+
+function readReference(unit, grades, n) {
+  const total = unit === 'rate' ? 100 : n;
+  const values = {};
+  let sum = 0;
+  for (const grade of grades.slice(0, -1)) {
+    const value = toNum(referenceInput(grade, unit).value);
+    if (value === null || value < 0 || value > total || (unit === 'count' && !Number.isInteger(value))) {
+      return {error: unit === 'rate' ? `${grade} 참고비율에 0~100%를 입력해 주세요.` : `${grade} 참고 인원에 0~${n} 사이의 정수를 입력해 주세요.`};
+    }
+    values[grade] = value;
+    sum += value;
+  }
+  if (sum > total + 1e-8) return {error:`입력 합계 ${planningText(sum)}${unit === 'rate' ? '%가 100%를' : `명이 유효 학생 ${n}명을`} 초과합니다.`};
+  values[grades.at(-1)] = Math.max(0, +(total - sum).toFixed(8));
+  const rates = Object.fromEntries(grades.map(grade => [grade, unit === 'rate' ? values[grade] : n ? values[grade] * 100 / n : 0]));
+  return {values, rates};
+}
+
+function createPlanningTables() {
+  const defaults = [23, 22, 25, 15, 15, 0];
+  $('referenceBands').innerHTML = planningGrades.map((grade, i) => `<tr id="refRow${grade}">
+    <th scope="row">${grade}</th><td>
+      <input id="target${grade}Rate" type="number" min="0" max="100" step="any" value="${defaults[i]}" aria-label="${grade} 참고비율 (%)">
+      <input id="target${grade}Count" type="number" min="0" step="1" aria-label="${grade} 참고 인원 (명)" hidden>
+    </td><td data-ref="size"></td><td data-ref="actual"></td><td data-ref="rank"></td><td data-ref="range"></td></tr>`).join('');
+  $('scenarioBoundaries').innerHTML = LEVELS.map((grade, i) => `<tr id="scenarioRow${grade}">
+    <th scope="row">${grade}/${planningGrades[i+1]}</th><td data-ref="edges"></td>
+    <td><strong data-ref="suggestion"></strong><button class="btn secondary small" data-copy-cut="${grade}" aria-label="${grade} 경계 역산값만 가져오기">이 값 가져오기</button><small data-ref="reason"></small></td><td data-ref="active"></td>
+    <td><input id="draftCut${grade}" type="number" min="0" step="any" aria-label="${grade}/${planningGrades[i+1]} 비교할 2차 지필 컷"></td></tr>`).join('');
+}
+
+function setCell(row, name, text) {
+  row.querySelector(`[data-ref="${name}"]`).textContent = text;
+}
+
+function draftValues() {
+  return Object.fromEntries(activeLevels().map(grade => [grade, toNum($('draftCut'+grade).value)]));
+}
+
+function renderSemesterPlanner(rows, config, refreshStudentViews = true) {
+  lastSemesterResult = {rows, config};
+  const grades = config.useI ? planningGrades : LEVELS;
+  const unit = $('referenceUnit').value;
+  const reference = readReference(unit, grades, rows.length);
+  const last = grades.at(-1);
+  const baseReady = validPlanningBase(config);
+  const dist = distributionFor(rows, config.useI);
+  latestSuggestions = [];
+  if (!reference.error && rows.length && validSemesterScale(config)) latestSuggestions = buildReferenceBands(rows, reference.rates, config);
+  const bands = new Map(latestSuggestions.map(band => [band.grade, band]));
+  if (refreshStudentViews) {
+    const populated = latestSuggestions.filter(band => band.count > 0);
+    for (const student of rows) {
+      student.referenceGrade = populated.find(band => student.total >= band.low)?.grade ?? '-';
+    }
+    renderStudents(rows);
+    renderSelectedBoundary();
+  }
+  const referenceCounts = Object.fromEntries(grades.map(grade => [grade, 0]));
+  for (const student of rows) {
+    if (Object.hasOwn(referenceCounts, student.referenceGrade)) referenceCounts[student.referenceGrade]++;
+  }
+  for (const grade of planningGrades) {
+    const row = $('refRow'+grade);
+    row.hidden = !grades.includes(grade);
+    if (row.hidden) continue;
+    for (const mode of ['rate','count']) {
+      const input = referenceInput(grade, mode);
+      input.hidden = mode !== unit;
+      input.readOnly = grade === last;
+      if (mode === unit && grade === last) input.value = reference.values?.[grade] ?? '';
+    }
+    const band = bands.get(grade);
+    const tieDetail = band && referenceCounts[grade] !== band.count ? ` (동점 반영 ${referenceCounts[grade]}명)` : '';
+    setCell(row, 'size', band ? `${band.count}명 · ${planningText(band.rate)}%${tieDetail}` : '—');
+    setCell(row, 'actual', config.cutReady && rows.length ? `${dist[grade].count}명 · ${fmt(dist[grade].rate,1)}%` : '—');
+    setCell(row, 'rank', band?.count ? `${band.start}~${band.end}번째` : '—');
+    setCell(row, 'range', band?.count ? `${planningText(band.low)}~${planningText(band.high)}점` : '—');
+  }
+  $('referenceNotice').textContent = reference.error || (!rows.length ? '점수가 갖춰진 학생이 있으면 참고 인원과 점수대를 표시합니다.' :
+    !validSemesterScale(config) ? '평가별 만점과 반영점수를 확인해 주세요.' :
+    !baseReady ? '참고 성취도는 예상총점으로 표시했습니다. 2차 지필 컷 역산에는 기존 평가의 분할점수가 필요합니다.' :
+    `${rows.length}명 기준 · ${last} ${planningText(reference.values[last])}${unit === 'rate' ? '%' : '명'}은 남은 몫입니다. 동점자가 걸친 경계는 아래 표에 표시합니다.`);
+  const comparison = $('kpiCards').children[2].querySelector('.detail');
+  if (rows.length && !reference.error && config.cutReady) {
+    const diff = dist.A.rate - reference.rates.A;
+    comparison.textContent = `참고 ${planningText(reference.rates.A)}% 대비 ${diff >= 0 ? '+' : ''}${fmt(diff,1)}%p`;
+  } else comparison.textContent = reference.error ? '참고 분포 입력 확인' : '유효한 점수와 기준 입력 후 비교';
+  for (const grade of LEVELS) {
+    const row = $('scenarioRow'+grade);
+    row.hidden = grade === 'E' && !config.useI;
+    if (row.hidden) continue;
+    const band = bands.get(grade);
+    const edge = band?.boundary;
+    const active = config.assessmentCuts.exam2?.[grade];
+    const field = $('draftCut'+grade);
+    field.max = config.maxes.exam2;
+    if (!draftEdited) field.value = Number.isFinite(active) ? active : '';
+    setCell(row, 'active', planningText(active));
+    setCell(row, 'edges', edge ? `${planningText(band.low)} / ${planningText(edge.lower)}` : '—');
+    setCell(row, 'suggestion', planningText(edge?.examCut));
+    row.querySelector('button').disabled = !Number.isFinite(edge?.examCut);
+    setCell(row, 'reason', edge?.note || '');
+  }
+  const goodDraft = validPlanningCuts(draftValues(), config.maxes.exam2, config.useI);
+  $('fillSuggestedCuts').disabled = !latestSuggestions.some(band => Number.isFinite(band.boundary?.examCut));
+  $('toNeis').disabled = !goodDraft;
+  $('applyScenario').disabled = !rows.length || !baseReady || !goodDraft || config.weights.exam2 <= 0;
+  $('clearScenario').disabled = !scenarioCuts && !draftEdited;
+  const mode = scenarioCuts ? '입력한 비교용 컷 적용 중' : '자동 추정 컷 사용 중';
+  let detail = '비교할 컷을 적용하면 같은 학생 예상총점으로 성취도를 다시 판정합니다.';
+  if (!goodDraft && (draftEdited || scenarioCuts)) detail = `각 컷을 0~${planningText(config.maxes.exam2)}점 범위에서 위에서 아래로 낮아지도록 입력해 주세요.`;
+  if (config.weights.exam2 === 0) detail = '2차 지필 반영점수가 0점이므로 지필 컷으로 분포를 조정할 수 없습니다.';
+  if (reference.error) detail += ' 참고 분포의 입력값도 확인해 주세요.';
+  $('scenarioNotice').textContent = `${mode} · ${detail}`;
+  $('scenarioOutcome').textContent = config.cutReady && rows.length
+    ? '현재 예상 분포 · ' + grades.map(grade => `${grade} ${dist[grade].count}명 (${fmt(dist[grade].rate,1)}%)`).join(' / ')
+    : '';
+}
+
+function changePlannerLevels(include) {
+  scenarioCuts = null;
+  draftEdited = false;
+  // E changes from remainder to input when I is enabled. Keep the displayed E share/count.
+  if (include) {
+    const unit = $('referenceUnit').value;
+    const field = referenceInput('E', unit);
+    if (field.value === '') field.value = 0;
+  }
+}
+
+function resetSemesterPlanning() {
+  scenarioCuts = null;
+  draftEdited = false;
+  latestSuggestions = [];
+  resetSemesterNeis();
+}
+
+function initializeSemesterPlanning() {
+  createPlanningTables();
+  $('boundaryBasis').addEventListener('change', renderSelectedBoundary);
+  $('boundaryTabs').addEventListener('click', event => {
+    const pair = event.target.closest('[data-boundary]')?.dataset.boundary;
+    if (pair) {
+      state.boundary = pair;
+      renderSelectedBoundary();
+    }
+  });
+  function refreshReference() {
+    if (lastSemesterResult) renderSemesterPlanner(lastSemesterResult.rows, lastSemesterResult.config);
+  }
+  $('referenceUnit').addEventListener('change', () => {
+    const unit = $('referenceUnit').value;
+    // Read the unit being left, then seed the other unit with this distribution.
+    const fromUnit = unit === 'rate' ? 'count' : 'rate';
+    const grades = state.includeI ? planningGrades : LEVELS;
+    const before = readReference(fromUnit, grades, state.rows.length);
+    if (!before.error && state.rows.length) {
+      let cumulative = 0, previous = 0;
+      for (const grade of grades) {
+        cumulative += before.rates[grade];
+        const end = Math.round(state.rows.length * cumulative / 100 + 1e-10);
+        referenceInput(grade,unit).value = unit === 'count' ? end - previous : +before.rates[grade].toFixed(6);
+        previous = end;
+      }
+    } else if (unit === 'count') {
+      grades.forEach(grade => { if (!referenceInput(grade,unit).value) referenceInput(grade,unit).value = 0; });
+    }
+    refreshReference();
+  });
+  $('referenceBands').addEventListener('input', refreshReference);
+  $('scenarioBoundaries').addEventListener('input', () => {
+    draftEdited = true;
+    if (lastSemesterResult) renderSemesterPlanner(lastSemesterResult.rows, lastSemesterResult.config, false);
+  });
+  $('scenarioBoundaries').addEventListener('click', event => {
+    const grade = event.target.closest('[data-copy-cut]')?.dataset.copyCut;
+    if (!grade) return;
+    calculateAndRender();
+    const suggested = latestSuggestions.find(band => band.grade === grade)?.boundary?.examCut;
+    if (Number.isFinite(suggested)) {
+      draftEdited = true;
+      $('draftCut'+grade).value = suggested;
+      calculateAndRender();
+    }
+  });
+  $('fillSuggestedCuts').addEventListener('click', () => {
+    calculateAndRender();
+    if ($('fillSuggestedCuts').disabled) return;
+    draftEdited = true;
+    for (const band of latestSuggestions) {
+      if (band.boundary) $('draftCut'+band.grade).value = band.boundary.examCut ?? '';
+    }
+    calculateAndRender();
+  });
+  $('applyScenario').addEventListener('click', () => {
+    calculateAndRender();
+    if ($('applyScenario').disabled) return;
+    scenarioCuts = draftValues();
+    draftEdited = false;
+    calculateAndRender();
+  });
+  $('clearScenario').addEventListener('click', () => {
+    scenarioCuts = null;
+    draftEdited = false;
+    calculateAndRender();
+  });
+  $('toNeis').addEventListener('click', () => {
+    calculateAndRender();
+    if (!$('toNeis').disabled) openSemesterNeis(draftValues(), toNum($('maxExam2').value));
+  });
+}
+
 // ── 유틸 ──────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 const clamp = (n,min=0,max=100) => Math.max(min,Math.min(max,n));
@@ -331,14 +719,18 @@ function estimateExam2CutsFromExam1(examMap,maxes){
 function assignAchievementByCut(total,cuts,useI=false){if(total>=cuts.A)return'A';if(total>=cuts.B)return'B';if(total>=cuts.C)return'C';if(total>=cuts.D)return'D';if(useI&&total<cuts.E)return'I';return'E';}
 function calculateSemesterValue(values,maxes,weights){return Math.round(Object.keys(weights).reduce((sum,key)=>sum+(values[key]/maxes[key])*weights[key],0)*1000)/1000;}
 function readSemesterBase(){
-  const weights={exam1:toNum($('wExam1').value)??0,exam2:toNum($('wExam2').value)??0,perf1:toNum($('wPerf1').value)??0,perf2:toNum($('wPerf2').value)??0},maxes={exam1:toNum($('maxExam1').value)??0,exam2:toNum($('maxExam2').value)??0,perf1:toNum($('maxPerf1').value)??0,perf2:toNum($('maxPerf2').value)??0};return{weights,maxes,targetARate:toNum($('targetARate').value)??0,useI:state.includeI};
+  const weights={exam1:toNum($('wExam1').value)??0,exam2:toNum($('wExam2').value)??0,perf1:toNum($('wPerf1').value)??0,perf2:toNum($('wPerf2').value)??0},maxes={exam1:toNum($('maxExam1').value)??0,exam2:toNum($('maxExam2').value)??0,perf1:toNum($('maxPerf1').value)??0,perf2:toNum($('maxPerf2').value)??0};return {weights,maxes,useI:state.includeI};
 }
 function buildSemesterConfig(exam1Map){
-  const base=readSemesterBase(),assessmentCuts={exam1:getAssessmentCuts('Exam1'),exam2:estimateExam2CutsFromExam1(exam1Map,base.maxes),perf1:getAssessmentCuts('Perf1'),perf2:getAssessmentCuts('Perf2')},cuts={A:null,B:null,C:null,D:null,E:null};
+  const base=readSemesterBase();
+  const exam2Cuts = scenarioCuts || estimateExam2CutsFromExam1(exam1Map,base.maxes);
+  const assessmentCuts={exam1:getAssessmentCuts('Exam1'),exam2:exam2Cuts,perf1:getAssessmentCuts('Perf1'),perf2:getAssessmentCuts('Perf2')};
+  const cuts={A:null,B:null,C:null,D:null,E:null};
   updateExam2AutoCutDisplay(assessmentCuts.exam2);
-  const levels=activeLevels(),ready=assessmentCuts.exam2!==null&&['exam1','perf1','perf2'].every(key=>levels.every(level=>assessmentCuts[key][level]!==null));
+  const levels=activeLevels();
+  const ready = validPlanningBase({...base, assessmentCuts}) && exam2Cuts && validPlanningCuts(exam2Cuts,base.maxes.exam2,base.useI);
   if(ready)levels.forEach(level=>cuts[level]=calculateSemesterValue(Object.fromEntries(Object.keys(base.weights).map(key=>[key,assessmentCuts[key][level]])),base.maxes,base.weights));
-  return{...base,assessmentCuts,cuts,cutReady:ready};
+  return{...base,assessmentCuts,cuts,cutReady:!!ready && validDescending(cuts,100,base.useI)};
 }
 function performanceSettings(prefix){return{min:toNum($(prefix+'Min').value)??0,max:toNum($(prefix+'Max').value)??100,mean:toNum($(prefix+'Mean').value)??0,strength:toNum($(prefix+'Strength').value)??.65};}
 function buildSemesterRows(exam2Offset=0){
@@ -347,7 +739,7 @@ function buildSemesterRows(exam2Offset=0){
   const perf1=state.modes.perf1==='estimate'?estimatePerformanceFromExam1(exam1.map,performanceSettings('perf1')):perf1Actual.map;
   const perf2=state.modes.perf2==='estimate'?estimatePerformanceFromExam1(exam1.map,performanceSettings('perf2')):perf2Actual.map;
   const exam2=state.modes.exam2==='linear'?estimateExam2Linear(exam1.map,toNum($('exam2LinearMin').value)??0,toNum($('exam2LinearMax').value)??config.maxes.exam2,exam2Offset):estimateExam2Offset(exam1.map,clamp(toNum($('exam2Delta').value)??0,-30,30),exam2Offset,config.maxes.exam1,config.maxes.exam2);
-  updateExam2Preview(exam2);
+  if (exam2Offset === 0) updateExam2Preview(exam2);
   const missing=[],rows=[];
   exam1.map.forEach((base,key)=>{const missingItems=[];if(!perf1.has(key))missingItems.push('1차 수행');if(!perf2.has(key))missingItems.push('2차 수행');if(!exam2.has(key))missingItems.push('2차 지필 예상');if(missingItems.length){missing.push({classNo:base.classNo,number:base.number,items:missingItems});return;}const scores={exam1:base.score,exam2:exam2.get(key).score,perf1:perf1.get(key).score,perf2:perf2.get(key).score};const total=calculateSemesterValue(scores,config.maxes,config.weights);rows.push({key,classNo:base.classNo,number:base.number,...scores,total});});
   [perf1Actual.map,perf2Actual.map].forEach((map,index)=>{if((index===0?state.modes.perf1:state.modes.perf2)!=='actual')return;map.forEach((v,key)=>{if(!exam1.map.has(key))missing.push({classNo:v.classNo,number:v.number,items:['1차 지필']});});});
@@ -393,15 +785,96 @@ function renderItemCutResults(){['A','B','C','D'].forEach(level=>$('itemCut'+lev
 function smoothnessPenalty(gap){const normalized=Math.abs(gap)/5;return normalized+normalized*normalized*.08;}
 function generateLevelProfiles(target,points,maxRates,previousRates){let beam=[{rates:[],sum:0,cost:0}];const pointArray=CATEGORIES.map(c=>points[c.key]);for(let index=0;index<CATEGORIES.length;index++){const next=[];for(const partial of beam){const difficultyMax=index%3===0?100:partial.rates[index-1]-5,achievementMax=previousRates?previousRates[index]-5:100,crossTypeMax=index<3?100:partial.rates[index-3],allowedMax=Math.min(100,difficultyMax,achievementMax,crossTypeMax,maxRates[index]);if(allowedMax<0)continue;for(let rate=0;rate<=allowedMax;rate+=5){const sum=partial.sum+pointArray[index]*rate/100,extreme=(rate===0||rate===100)?INVERSE_WEIGHTS.extremePenalty:0,diff=index%3===0?0:INVERSE_WEIGHTS.difficultySmoothness*smoothnessPenalty(partial.rates[index-1]-rate),achievement=previousRates?INVERSE_WEIGHTS.achievementSmoothness*smoothnessPenalty(previousRates[index]-rate):0,cross=index<3?0:INVERSE_WEIGHTS.crossTypeSmoothness*smoothnessPenalty(partial.rates[index-3]-rate),rates=[...partial.rates,rate],localCost=partial.cost+extreme+diff+achievement+cross,remainingMax=pointArray.slice(index+1).reduce((s,p,j)=>s+p*Math.max(0,Math.min(maxRates[index+1+j],100))/100,0),lower=sum,upper=sum+remainingMax,distance=target<lower?lower-target:target>upper?target-upper:0;next.push({rates,sum,cost:localCost,rank:localCost+distance*INVERSE_WEIGHTS.targetError});}}next.sort((a,b)=>a.rank-b.rank);beam=next.slice(0,INVERSE_BEAM.profileWidth);if(!beam.length)break;}return beam.map(profile=>({...profile,cost:profile.cost+Math.abs(profile.sum-target)*INVERSE_WEIGHTS.targetError})).sort((a,b)=>a.cost-b.cost).slice(0,INVERSE_BEAM.profilesPerState);}
 function inverseCandidates(points,targets){const levels=activeLevels();let global=[{profiles:[],cost:0}];for(let levelIndex=0;levelIndex<levels.length;levelIndex++){const next=[];for(const stateItem of global){const previous=stateItem.profiles.at(-1)?.rates??null,maxRates=previous?previous.map(v=>v-5):Array(6).fill(100),profiles=generateLevelProfiles(targets[levels[levelIndex]],points,maxRates,previous);for(const profile of profiles)next.push({profiles:[...stateItem.profiles,profile],cost:stateItem.cost+profile.cost});}next.sort((a,b)=>a.cost-b.cost);const seen=new Set();global=[];for(const candidate of next){const key=candidate.profiles.map(p=>p.rates.join(',')).join('|');if(seen.has(key))continue;seen.add(key);global.push(candidate);if(global.length>=INVERSE_BEAM.globalWidth)break;}}return global.slice(0,INVERSE_BEAM.resultCount).map(candidate=>{const rates=blankRates();levels.forEach((level,i)=>CATEGORIES.forEach((category,j)=>rates[level][category.key]=candidate.profiles[i].rates[j]));const cuts=calculateAssessmentCuts(points,rates);return{rates,cuts,cost:candidate.cost,errors:Object.fromEntries(levels.map(level=>[level,cuts[level]-targets[level]]))};});}
-function renderInverseCandidates(){const exam=activeCutExam(),levels=activeLevels(),targets=Object.fromEntries(levels.map(level=>[level,toNum($('reverse'+level).value)??0]));$('reverseResult').innerHTML=exam.candidates.map((candidate,index)=>{const maxError=Math.max(...levels.map(level=>Math.abs(candidate.errors[level]))),warning=maxError>1?`현재 배점 구조에서는 자연스러운 배열로 목표에 정확히 맞추기 어렵습니다. 최대 오차 ${fmt(maxError)}점입니다.`:'';return`<div class="candidate ${index===exam.selectedCandidate?'selected':''}"><div class="actions"><b>추천안 ${index+1}</b><button class="btn secondary small apply-candidate" data-index="${index}">현재 입력값에 적용</button></div>${warning?`<div class="notice warn">${esc(warning)}</div>`:''}<div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>범주</th>${levels.map(l=>`<th>${l}</th>`).join('')}</tr></thead><tbody>${CATEGORIES.map(c=>`<tr><td>${c.label}</td>${levels.map(l=>`<td>${candidate.rates[l][c.key]}%</td>`).join('')}</tr>`).join('')}</tbody><tfoot><tr><th>목표 / 추천 / 오차</th>${levels.map(l=>`<th>${fmt(targets[l])} / ${fmt(candidate.cuts[l])} / ${candidate.errors[l]>=0?'+':''}${fmt(candidate.errors[l])}</th>`).join('')}</tr></tfoot></table></div></div>`;}).join('');$('reverseResult').querySelectorAll('.apply-candidate').forEach(btn=>btn.addEventListener('click',()=>applyInverseCandidate(Number(btn.dataset.index))));}
+function inverseCandidateMarkup(candidates,levels,targets,{selected=-1,allowApply=false,points=null}={}){
+  return candidates.map((candidate,index)=>{
+    const maxError=Math.max(...levels.map(level=>Math.abs(candidate.errors[level]))),warning=maxError>1?`현재 배점 구조에서는 자연스러운 배열로 목표에 정확히 맞추기 어렵습니다. 최대 오차 ${fmt(maxError)}점입니다.`:'';
+    return `<div class="candidate ${index===selected?'selected':''}"><div class="actions"><b>추천안 ${index+1}</b>${allowApply?`<button type="button" class="btn secondary small apply-candidate" data-index="${index}">현재 입력값에 적용</button>`:''}</div>${warning?`<div class="notice warn">${esc(warning)}</div>`:''}<div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>범주</th>${levels.map(l=>`<th>${l}</th>`).join('')}</tr></thead><tbody>${CATEGORIES.map(c=>`<tr><td>${c.label}</td>${levels.map(l=>`<td>${points&&points[c.key]===0?'—':candidate.rates[l][c.key]+'%'}</td>`).join('')}</tr>`).join('')}</tbody><tfoot><tr><th>목표 / 추천 / 오차</th>${levels.map(l=>`<th>${fmt(targets[l])} / ${fmt(candidate.cuts[l])} / ${candidate.errors[l]>=0?'+':''}${fmt(candidate.errors[l])}</th>`).join('')}</tr></tfoot></table></div></div>`;
+  }).join('');
+}
+function renderInverseCandidates(){const exam=activeCutExam(),levels=activeLevels(),targets=Object.fromEntries(levels.map(level=>[level,toNum($('reverse'+level).value)??0]));$('reverseResult').innerHTML=inverseCandidateMarkup(exam.candidates,levels,targets,{selected:exam.selectedCandidate,allowApply:true});$('reverseResult').querySelectorAll('.apply-candidate').forEach(btn=>btn.addEventListener('click',()=>applyInverseCandidate(Number(btn.dataset.index))));}
 function runReverse(){const points=activeCategoryPoints(),sum=totalPoints(points),max=toNum($('cutAssessmentMax').value)??0,levels=activeLevels();if(sum<=0||Math.abs(sum-max)>.001)return alert('문항범주 배점합과 평가 만점을 먼저 일치시켜 주세요.');const targets=Object.fromEntries(levels.map(level=>[level,clamp(toNum($('reverse'+level).value)??0,0,max)]));const ordered=levels.every((level,i)=>i===0||targets[levels[i-1]]>targets[level]);if(!ordered)return alert(state.includeI?'목표값은 A/B > B/C > C/D > D/E > E/I 기준 순서로 서로 다르게 입력해 주세요.':'목표값은 A/B > B/C > C/D > D/E 순서로 서로 다르게 입력해 주세요.');activeCutExam().candidates=inverseCandidates(points,targets);activeCutExam().selectedCandidate=0;renderInverseCandidates();}
 function applyInverseCandidate(index){const exam=activeCutExam(),candidate=exam.candidates[index];if(!candidate)return;exam.selectedCandidate=index;activeLevels().forEach(level=>exam.rates[level]={...candidate.rates[level]});renderRateTable();calculateCutResults();renderInverseCandidates();}
+
+const semesterNeisBoundaries={A:'A/B',B:'B/C',C:'C/D',D:'D/E',E:'E/I'};
+function semesterNeisNotice(message='',kind='info'){
+  const notice=$('semesterNeisStatus');if(!notice)return;
+  notice.className=`notice ${kind}`;notice.textContent=message;notice.hidden=!message;
+}
+function invalidateSemesterNeis(){
+  const result=$('semesterNeisResult');if(result)result.replaceChildren();
+  semesterNeisNotice();
+}
+function syncSemesterNeisMax(){
+  const max=toNum($('maxExam2').value),label=$('semesterNeisMax');
+  if(!label)return;
+  label.textContent=max>0?`${fmt(max)}점`:'유효한 만점을 입력해 주세요';
+  LEVELS.forEach(level=>{
+    const target=$('semesterNeisGoal'+level);
+    if(max>0)target.max=String(max);else target.removeAttribute('max');
+  });
+}
+function resetSemesterNeis(){
+  const panel=$('semesterNeis');if(!panel)return;
+  panel.querySelectorAll('input').forEach(input=>{input.value='';});
+  $('semesterNeisGoalEWrap').hidden=!state.includeI;
+  $('semesterNeisGoalE').disabled=!state.includeI;
+  panel.open=false;
+  syncSemesterNeisMax();invalidateSemesterNeis();
+}
+function openSemesterNeis(cuts,max){
+  const panel=$('semesterNeis'),levels=activeLevels();if(!panel)return;
+  panel.open=true;invalidateSemesterNeis();
+  if(!Number.isFinite(max)||max<=0||max!==toNum($('maxExam2').value)||!levels.every((level,index)=>Number.isFinite(cuts?.[level])&&cuts[level]>=0&&cuts[level]<=max&&(index===0||cuts[levels[index-1]]>cuts[level]))){
+    semesterNeisNotice('유효한 2차 지필 가안의 목표값만 가져올 수 있습니다.','bad');
+  }else{
+    LEVELS.forEach(level=>{$('semesterNeisGoal'+level).value=levels.includes(level)?String(cuts[level]):'';});
+    syncSemesterNeisMax();
+    semesterNeisNotice('2차 지필 가안 원점수를 목표로 복사했습니다. 문항범주 배점합을 입력한 뒤 후보를 찾아 주세요.');
+  }
+  const summary=panel.querySelector('summary');summary.focus({preventScroll:true});panel.scrollIntoView({block:'start'});
+}
+function runSemesterNeis(){
+  invalidateSemesterNeis();
+  const max=toNum($('maxExam2').value),levels=activeLevels();
+  if(max===null||max<=0)return semesterNeisNotice('학기 평가 설정에서 2차 지필 만점을 올바르게 입력해 주세요.','bad');
+  const points=Object.fromEntries(CATEGORIES.map(category=>{
+    const input=$('semesterNeisPoint_'+category.key);return [category.key,input.validity.badInput?null:input.value===''?0:toNum(input.value)];
+  }));
+  if(Object.values(points).some(value=>value===null||value<0))return semesterNeisNotice('문항범주별 배점합은 0 이상의 숫자로 입력해 주세요.','bad');
+  const sum=totalPoints(points);
+  if(sum<=0||Math.abs(sum-max)>.001)return semesterNeisNotice(`문항범주 배점합(${fmt(sum)}점)을 2차 지필 만점(${fmt(max)}점)과 일치시켜 주세요.`,'bad');
+  const targets=Object.fromEntries(levels.map(level=>[level,toNum($('semesterNeisGoal'+level).value)]));
+  if(levels.some(level=>targets[level]===null||targets[level]<0||targets[level]>max))return semesterNeisNotice(`모든 목표값을 0부터 ${fmt(max)}점 사이의 원점수로 입력해 주세요.`,'bad');
+  if(!levels.every((level,index)=>index===0||targets[levels[index-1]]>targets[level]))return semesterNeisNotice(`목표값을 ${levels.map(level=>semesterNeisBoundaries[level]).join(' > ')} 순서로 서로 다르게 입력해 주세요.`,'bad');
+  const candidates=inverseCandidates(points,targets);
+  if(!candidates.length)return semesterNeisNotice('조건을 만족하는 후보를 찾지 못했습니다. 목표값과 배점 구성을 확인해 주세요.','warn');
+  $('semesterNeisResult').innerHTML=inverseCandidateMarkup(candidates,levels,targets,{points});
+  semesterNeisNotice(`정답률 후보 ${candidates.length}개를 찾았습니다. NEIS 입력 참고용이며 자동 반영되지 않습니다.`,'ok');
+}
+function initSemesterNeis(){
+  const host=$('semesterNeisHost');if(!host)return;
+  host.innerHTML=`<details id="semesterNeis" class="card"><summary>2차 지필 NEIS 예상정답률 역산 보조</summary><div class="card-body">
+    <p class="card-note">공식 분할점수 산출을 대체하지 않는 NEIS 입력 참고용입니다. 입력 및 결과는 학기말 예측과 분할점수 산출 탭에 자동 반영되지 않습니다.</p>
+    <p>2차 지필 만점: <b id="semesterNeisMax"></b></p>
+    <h3>문항범주별 배점합</h3><p class="card-note">사용하지 않는 범주는 비워 두거나 0을 입력하세요.</p>
+    <div class="field-grid three">${CATEGORIES.map(category=>`<div><label for="semesterNeisPoint_${category.key}">${category.label}</label><input id="semesterNeisPoint_${category.key}" type="number" min="0" step="any"></div>`).join('')}</div>
+    <h3 style="margin-top:12px">목표 분할점수 (2차 지필 원점수)</h3>
+    <div class="field-grid five">${LEVELS.map(level=>`<div id="semesterNeisGoal${level}Wrap"><label for="semesterNeisGoal${level}">${semesterNeisBoundaries[level]} 목표</label><input id="semesterNeisGoal${level}" type="number" min="0" step="any"></div>`).join('')}</div>
+    <div class="actions" style="margin-top:12px"><button type="button" class="btn" id="semesterNeisRun">정답률 후보 찾기</button></div>
+    <div id="semesterNeisStatus" role="status" hidden></div><div id="semesterNeisResult"></div>
+  </div></details>`;
+  host.addEventListener('input',invalidateSemesterNeis);
+  $('semesterNeisRun').addEventListener('click',runSemesterNeis);
+  $('maxExam2').addEventListener('input',()=>{syncSemesterNeisMax();invalidateSemesterNeis();});
+  resetSemesterNeis();
+}
+initSemesterNeis();
 
 // ── 렌더링 ────────────────────────────────────────────────────────────
 function setBadge(id,text,type){const el=$(id);if(!el)return;el.textContent=text;el.className=`status ${type}`;}
 function updateExam2AutoCutDisplay(cuts){
-  const ready=!!cuts,badge=$('exam2CutStatus');setBadge('exam2CutStatus',ready?'자동 추정':'미산출',ready?'estimated':'empty');
-  ['A','B','C','D','E'].forEach(level=>{const el=$('acExam2'+level);if(!el)return;if(level==='E'&&!state.includeI){el.value='';el.placeholder='미선택';el.disabled=true;return;}el.disabled=false;el.readOnly=true;el.value=ready&&cuts[level]!==null?fmt(cuts[level]):'';el.placeholder=ready?'':'미산출';});
+  const ready=!!cuts;setBadge('exam2CutStatus',scenarioCuts?'비교용 컷 적용':ready?'자동 추정':'미산출',ready?'estimated':'empty');
+  ['A','B','C','D','E'].forEach(level=>{const el=$('acExam2'+level);if(!el)return;if(level==='E'&&!state.includeI){el.value='';el.placeholder='미선택';el.disabled=true;return;}el.disabled=false;el.readOnly=true;el.value=ready&&cuts[level]!==null?String(cuts[level]):'';el.placeholder=ready?'':'미산출';});
 }
 function updateExam2Preview(exam2){const box=$('exam2Preview');if(!box)return;if(!exam2.size){box.className='notice info';box.textContent='1차 지필 실제자료를 입력하면 예상점수 범위를 바로 표시합니다.';return;}const values=[...exam2.values()].map(v=>v.score),min=Math.min(...values),max=Math.max(...values),mean=values.reduce((s,v)=>s+v,0)/values.length;box.className='notice ok';box.textContent=`2차 지필 예상점수 ${values.length}명 · 최저 ${fmt(min)} / 평균 ${fmt(mean)} / 최고 ${fmt(max)}`;}
 function updateBadges(){
@@ -410,37 +883,104 @@ function updateBadges(){
   setBadge('exam2Badge',state.modes.exam2==='linear'?'개별 선형 매핑':'일괄 보정','estimated');
 }
 function renderSummary(rows,config){
-  const cutReady=config.cutReady,dist=distributionFor(rows,config.useI),analysis=cutReady?analyzeBoundary(rows,'AB',config.cuts):{reference:null},exam1Ready=parseScoreTable($('exam1Text').value).rows>0,perf1Ready=state.modes.perf1==='actual'&&parseScoreTable($('perf1Text').value).rows>0,perf2Ready=state.modes.perf2==='actual'&&parseScoreTable($('perf2Text').value).rows>0,actualNames=[exam1Ready?'1차 지필':null,perf1Ready?'1차 수행':null,perf2Ready?'2차 수행':null].filter(Boolean),actualCount=actualNames.length,completeness=actualCount>=3?'높음':actualCount===2?'보통':'낮음',actualDetail=actualCount?`실제자료 ${actualCount}개 확보 · ${actualNames.join(', ')}`:'확보된 실제자료 없음',diff=dist.A.rate-config.targetARate;
-  $('kpiCards').innerHTML=[['유효 학생수',`${rows.length}명`,'계산 포함 학생'],['예상 A 인원',cutReady?`${dist.A.count}명`:'-',cutReady?'분할점수 기준':'2차 지필 기준 미산출'],['예상 A 비율',cutReady?`${fmt(dist.A.rate,1)}%`:'-',cutReady?`참고비율 대비 ${diff>=0?'+':''}${fmt(diff,1)}%p`:'2차 지필 기준 미산출'],['A/B 예상 경계',cutReady?(analysis.reference!==null?fmt(analysis.reference):`A컷 ${fmt(config.cuts.A)}`):'-',cutReady?`적용 A컷 ${fmt(config.cuts.A)}`:'2차 지필 기준 미산출'],['입력자료 완성도',completeness,actualDetail]].map(x=>`<div class="kpi"><div class="label">${esc(x[0])}</div><div class="value">${esc(x[1])}</div><div class="detail">${esc(x[2])}</div></div>`).join('');
+  const cutReady=config.cutReady,dist=distributionFor(rows,config.useI),analysis=cutReady?analyzeBoundary(rows,'AB',config.cuts):{reference:null},exam1Ready=parseScoreTable($('exam1Text').value).rows>0,perf1Ready=state.modes.perf1==='actual'&&parseScoreTable($('perf1Text').value).rows>0,perf2Ready=state.modes.perf2==='actual'&&parseScoreTable($('perf2Text').value).rows>0,actualNames=[exam1Ready?'1차 지필':null,perf1Ready?'1차 수행':null,perf2Ready?'2차 수행':null].filter(Boolean),actualCount=actualNames.length,completeness=actualCount>=3?'높음':actualCount===2?'보통':'낮음',actualDetail=actualCount?`실제자료 ${actualCount}개 확보 · ${actualNames.join(', ')}`:'확보된 실제자료 없음';
+  $('kpiCards').innerHTML=[['유효 학생수',`${rows.length}명`,'계산 포함 학생'],['예상 A 인원',cutReady?`${dist.A.count}명`:'-',cutReady?'분할점수 기준':'2차 지필 기준 미산출'],['예상 A 비율',cutReady?`${fmt(dist.A.rate,1)}%`:'-',cutReady?'참고 분포와 아래 표에서 비교':'2차 지필 기준 미산출'],['A/B 예상 경계',cutReady?(analysis.reference!==null?fmt(analysis.reference):`A컷 ${fmt(config.cuts.A)}`):'-',cutReady?`적용 A컷 ${fmt(config.cuts.A)}`:'2차 지필 기준 미산출'],['입력자료 완성도',completeness,actualDetail]].map(x=>`<div class="kpi"><div class="label">${esc(x[0])}</div><div class="value">${esc(x[1])}</div><div class="detail">${esc(x[2])}</div></div>`).join('');
   $('distribution').innerHTML=(config.useI?['A','B','C','D','E','I']:['A','B','C','D','E']).map(g=>`<div class="dist-card g${g}"><div class="grade">${g}</div><div class="count">${cutReady?`${dist[g].count}명`:'-'}</div><div>${cutReady?`${fmt(dist[g].rate,1)}%`:'미산출'}</div><div class="bar"><span style="width:${clamp(dist[g].rate,0,100)}%"></span></div></div>`).join('');
   $('sourceSummary').innerHTML=[['1차 지필',exam1Ready?'실제':'미입력',exam1Ready?'actual':'empty'],['1차 수행',state.modes.perf1==='estimate'?'1차 지필 기반 예상':perf1Ready?'실제':'미입력',state.modes.perf1==='estimate'?'estimated':perf1Ready?'actual':'empty'],['2차 수행',state.modes.perf2==='estimate'?'1차 지필 기반 예상':perf2Ready?'실제':'미입력',state.modes.perf2==='estimate'?'estimated':perf2Ready?'actual':'empty'],['2차 지필',state.modes.exam2==='linear'?'1차 지필 기반 선형 매핑':'1차 지필 기반 일괄 보정','estimated']].map(x=>`<div class="source-item"><b>${esc(x[0])}</b> <span class="status ${x[2]}">${esc(x[1])}</span></div>`).join('');
 }
-function renderStudents(rows){$('rowCount').textContent=`${rows.length}명`;$('rowCount').className=`status ${rows.length?'actual':'empty'}`;$('studentBody').innerHTML=rows.length?rows.map(r=>`<tr class="student-row ${r.grade==='-'?'':`g${r.grade}`}"><td>${r.rank}</td><td>${r.grade==='-'?'<span class="status empty">미산출</span>':`<span class="grade-badge g${r.grade}">${r.grade}</span>`}</td><td>${esc(r.classNo)}반</td><td>${esc(r.number)}</td><td>${fmt(r.exam1)}</td><td>${fmt(r.exam2)} <span class="status estimated">예상</span></td><td>${fmt(r.perf1)} ${state.modes.perf1==='estimate'?'<span class="status estimated">예상</span>':''}</td><td>${fmt(r.perf2)} ${state.modes.perf2==='estimate'?'<span class="status estimated">예상</span>':''}</td><td><b>${fmt(r.total)}</b></td></tr>`).join(''):'<tr><td colspan="9">1차 지필 실제자료를 입력해 주세요.</td></tr>';}
+function gradeBadge(grade) {
+  return grade === '-' ? '<span class="status empty">미산출</span>' : `<span class="grade-badge g${grade}">${grade}</span>`;
+}
+
+function renderStudents(rows) {
+  setBadge('rowCount', `${rows.length}명`, rows.length ? 'actual' : 'empty');
+  $('studentBody').innerHTML = rows.map(row => `<tr class="student-row ${row.referenceGrade === '-' ? '' : 'g'+row.referenceGrade}">
+    <td>${row.rank}</td><td>${gradeBadge(row.referenceGrade)}</td><td>${gradeBadge(row.grade)}</td>
+    <td>${esc(row.classNo)}반</td><td>${esc(row.number)}</td><td>${fmt(row.exam1)}</td>
+    <td>${fmt(row.exam2)} <span class="status estimated">예상</span></td>
+    <td>${fmt(row.perf1)} ${state.modes.perf1==='estimate' ? '<span class="status estimated">예상</span>' : ''}</td>
+    <td>${fmt(row.perf2)} ${state.modes.perf2==='estimate' ? '<span class="status estimated">예상</span>' : ''}</td>
+    <td><b>${planningText(row.total)}</b></td></tr>`).join('') || '<tr><td colspan="10">계산할 학생 자료를 입력해 주세요.</td></tr>';
+}
 function renderMissing(missing){const card=$('missingCard');if(!missing.length){card.classList.add('hidden');return;}card.classList.remove('hidden');$('missingNotice').innerHTML=`<b>⚠ 일부 성적이 없어 계산에서 제외된 학생 ${missing.length}명</b><br>${missing.slice(0,30).map(m=>`${esc(m.classNo)}반 ${esc(m.number)}번 — ${esc(m.items.join(', '))} 누락`).join('<br>')}${missing.length>30?`<br>외 ${missing.length-30}명`:''}`;}
-function renderBoundary(rows,cuts,useI=false,ready=true){
-  if(!ready){$('boundaryTabs').innerHTML='';$('boundaryMetrics').innerHTML='<div class="notice warn">1차 지필 실제자료와 기준값이 갖춰지면 경계 분석을 표시합니다.</div>';$('boundaryBody').innerHTML='<tr><td colspan="6">분할점수 미산출</td></tr>';return;}
-  const boundaries=useI?['AB','BC','CD','DE','EI']:['AB','BC','CD','DE'];if(!boundaries.includes(state.boundary))state.boundary='AB';$('boundaryTabs').innerHTML=boundaries.map(b=>`<button data-boundary="${b}" class="${state.boundary===b?'active':''}">${b[0]}/${b[1]} 경계 보기</button>`).join('');$('boundaryTabs').querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{state.boundary=btn.dataset.boundary;renderBoundary(rows,cuts,useI,true);}));const a=analyzeBoundary(rows,state.boundary,cuts),dense=a.within05>=5||a.within10>=10;
-  $('boundaryMetrics').innerHTML=[['적용 분할점수',fmt(a.cut)],[`${a.upper} 중 최저`,fmt(a.upperMin)],[`${a.lower} 중 최고`,fmt(a.lowerMax)],['두 학생 점수차',fmt(a.gap)],['참고 경계점',fmt(a.reference)]].map(x=>`<div class="metric"><span>${esc(x[0])}</span><b>${esc(x[1])}</b></div>`).join('')+`<div class="metric"><span>±0.5점 이내</span><b>${a.within05}명</b></div><div class="metric"><span>±1.0점 이내</span><b>${a.within10}명</b></div><div class="metric"><span>경계 동점</span><b>${a.ties}명</b></div>${dense?'<div class="metric density"><span>분포 안내</span><b>경계 밀집</b></div>':''}`;
-  $('boundaryBody').innerHTML=a.nearby.length?a.nearby.map(r=>`<tr><td>${r.rank}</td><td>${esc(r.classNo)}반</td><td>${esc(r.number)}</td><td>${fmt(r.total)}</td><td><span class="grade-badge g${r.grade}">${r.grade}</span></td><td>${r.total-a.cut>=0?'+':''}${fmt(r.total-a.cut)}</td></tr>`).join(''):'<tr><td colspan="6">계산할 자료가 없습니다.</td></tr>';
+function renderSelectedBoundary() {
+  if (!lastSemesterResult) return;
+  const {rows, config} = lastSemesterResult;
+  const boundaries = config.useI ? ['AB','BC','CD','DE','EI'] : ['AB','BC','CD','DE'];
+  if (!boundaries.includes(state.boundary)) state.boundary = 'AB';
+  $('boundaryTabs').innerHTML = boundaries.map(pair =>
+    `<button data-boundary="${pair}" class="${pair===state.boundary ? 'active' : ''}" aria-pressed="${pair===state.boundary}">${pair[0]}/${pair[1]} 경계 보기</button>`
+  ).join('');
+  const group = state.boundary[0];
+  const reference = $('boundaryBasis').value === 'reference';
+  const band = latestSuggestions.find(item => item.grade === group);
+  const cut = reference ? band?.low : (config.cutReady ? config.cuts[group] : null);
+  if (!Number.isFinite(cut) || !rows.length) {
+    const message = reference && band?.count === 0 ? `${group} 참고 인원이 0명이므로 최저점이 없습니다.` :
+      reference ? '유효한 학생 자료와 참고 분포를 입력하면 경계를 표시합니다.' : '적용할 학기말 분할점수와 학생 자료를 확인해 주세요.';
+    $('boundaryMetrics').textContent = message;
+    $('boundaryBody').innerHTML = '<tr><td colspan="6">경계 미산출</td></tr>';
+    return;
+  }
+  const viewRows = reference ? rows.map(row => ({...row,grade:row.referenceGrade})) : rows;
+  const a = analyzeBoundary(viewRows,state.boundary,{[group]:cut});
+  const metrics = [
+    [reference ? '참고 구간 최저점' : '적용 분할점수', planningText(cut)],
+    [`${a.upper} 중 최저`, planningText(a.upperMin)], [`${a.lower} 중 최고`,planningText(a.lowerMax)],
+    ['두 학생 점수차',planningText(a.gap)],
+    ['±0.5점 이내',`${a.within05}명`],['±1.0점 이내',`${a.within10}명`],['경계점과 같은 총점',`${a.ties}명`]
+  ];
+  if (!reference) metrics.splice(4,0,['관측 경계 중간점',planningText(a.reference)]);
+  $('boundaryMetrics').innerHTML = metrics.map(([label,value]) => `<div class="metric"><span>${label}</span><b>${value}</b></div>`).join('')
+    + (a.within05>=5 || a.within10>=10 ? '<div class="metric density"><span>분포 안내</span><b>경계 밀집</b></div>' : '');
+  $('boundaryBody').innerHTML = a.nearby.map(row => `<tr><td>${row.rank}</td><td>${esc(row.classNo)}반</td>
+    <td>${esc(row.number)}</td><td>${planningText(row.total)}</td><td>${gradeBadge(row.grade)}</td>
+    <td>${row.total >= cut ? '+' : ''}${planningText(row.total-cut)}</td></tr>`).join('');
 }
 function renderSensitivity(base,config){if(!config.cutReady){$('sensitivityBody').innerHTML='<tr><td colspan="5">분할점수가 산출되면 민감도 분석을 표시합니다.</td></tr>';return;}const offsets=[-4,-2,0,2,4];$('sensitivityBody').innerHTML=base.exam1Count?offsets.map(offset=>{const result=buildSemesterRows(offset),dist=distributionFor(result.rows,config.useI),a=analyzeBoundary(result.rows,'AB',config.cuts),label=offset===0?'기준':`${offset>0?'+':''}${offset}점`;return`<tr><td>${label}</td><td>${dist.A.count}명</td><td>${fmt(dist.A.rate,1)}%</td><td>${fmt(a.upperMin)} / ${fmt(a.lowerMax)}</td><td>${fmt(a.reference)}</td></tr>`;}).join(''):'<tr><td colspan="5">계산할 자료가 없습니다.</td></tr>';}
-function updateValidation(config){
-  const sum=Object.values(config.weights).reduce((s,v)=>s+v,0),maxValid=Object.values(config.maxes).every(v=>v>0),levels=activeLevels(),knownValid=['exam1','perf1','perf2'].every(key=>levels.every(level=>config.assessmentCuts[key][level]!==null)&&validDescending(config.assessmentCuts[key],config.maxes[key],config.useI)),exam2Valid=config.assessmentCuts.exam2&&validDescending(config.assessmentCuts.exam2,config.maxes.exam2,config.useI),weightValid=Math.abs(sum-100)<.001,weight=$('weightNotice');
-  weight.className=`notice ${weightValid&&maxValid&&knownValid?'ok':'bad'}`;weight.innerHTML=`<span class="weight-total ${weightValid?'ok':'bad'}">반영점수 합계 ${fmt(sum,1)}점</span> · ${!weightValid?'합계를 100점으로 맞춰 주세요.':!maxValid?'평가 만점은 0보다 커야 합니다.':!knownValid?'현재 확보된 평가의 분할점수 순서를 확인해 주세요.':!exam2Valid?'2차 지필 기준은 1차 지필 실제자료 입력 후 자동 추정됩니다.':'평가별 분할점수와 학생점수를 같은 척도로 환산합니다.'}`;
-  const valid=weightValid&&maxValid&&knownValid&&!!exam2Valid&&levels.every((level,i)=>i===0||config.cuts[levels[i-1]]>config.cuts[level]);const cut=$('cutValidation');['A','B','C','D'].forEach(level=>$('semCut'+level).textContent=valid?fmt(config.cuts[level]):'-');$('semCutE').textContent=config.useI?(valid?fmt(config.cuts.E):'-'):'미선택';cut.className=`notice ${valid?'ok':exam2Valid?'bad':'warn'}`;cut.textContent=valid?'평가요소별 분할점수를 반영점수 척도로 환산해 학기말 기준을 자동 산출했습니다.':!exam2Valid?'1차 지필 실제자료를 입력하면 2차 지필 예상 기준이 자동 산출됩니다.':'평가별 만점·반영점수·분할점수 입력을 확인해 주세요.';return valid;
+function updateValidation(config) {
+  const weights = Object.values(config.weights);
+  const sum = weights.reduce((total, value) => total + value, 0);
+  let issue = '';
+  if (weights.some(value => value < 0) || Math.abs(sum - 100) >= .001) {
+    issue = '각 반영점수를 0 이상, 합계를 100점으로 설정해 주세요.';
+  } else if (Object.values(config.maxes).some(max => max <= 0)) {
+    issue = '각 평가의 만점은 0보다 커야 합니다.';
+  } else if (!validPlanningBase(config)) {
+    issue = '1차 지필·수행평가의 분할점수 범위와 순서를 확인해 주세요.';
+  } else if (!config.cutReady) {
+    issue = scenarioCuts ? '2차 지필 만점과 비교용 컷을 확인하거나 자동 추정으로 복귀해 주세요.' :
+      '1차 지필 실제자료와 2차 지필 예상 조건을 확인해 주세요. 하단에서 비교용 컷을 입력할 수도 있습니다.';
+  }
+  const weight = $('weightNotice');
+  weight.className = 'notice ' + (issue ? 'warn' : 'ok');
+  weight.textContent = `반영점수 합계 ${fmt(sum,1)}점 · ${issue || '평가별 분할점수와 학생점수를 같은 척도로 환산합니다.'}`;
+  for (const level of LEVELS) {
+    $('semCut'+level).textContent = level === 'E' && !config.useI ? '미선택' :
+      config.cutReady ? planningText(config.cuts[level]) : '—';
+  }
+  const cut = $('cutValidation');
+  cut.className = 'notice ' + (issue ? 'warn' : 'ok');
+  cut.textContent = issue || `2차 지필 ${scenarioCuts ? '비교용 컷' : '자동 추정 컷'}을 포함해 학기말 기준을 계산했습니다.`;
+  return config.cutReady;
 }
-function calculateAndRender(){updateBadges();const result=buildSemesterRows(),valid=updateValidation(result.config);state.rows=result.rows;state.missing=result.missing;if(!result.exam1Count){$('resultNotice').className='notice info';$('resultNotice').textContent='1차 지필 실제자료를 입력해 주세요.';}else if(!valid){$('resultNotice').className='notice warn';$('resultNotice').textContent='예상총점은 계산되지만 학기말 성취도 기준을 산출하려면 분할점수 입력 상태를 확인해 주세요.';}else{$('resultNotice').className='notice ok';$('resultNotice').textContent=`${result.rows.length}명의 학기말 예상총점과 성취도 분포를 계산했습니다.${result.config.useI?' I는 E/I 기준 미만을 예상 표시한 값입니다.':''}`;}renderSummary(result.rows,result.config);renderStudents(result.rows);renderMissing(result.missing);renderBoundary(result.rows,result.config.cuts,result.config.useI,result.config.cutReady);renderSensitivity(result,result.config);}
+function calculateAndRender(){updateBadges();const result=buildSemesterRows(),valid=updateValidation(result.config);state.rows=result.rows;state.missing=result.missing;if(!result.exam1Count){$('resultNotice').className='notice info';$('resultNotice').textContent='1차 지필 실제자료를 입력해 주세요.';}else if(!valid){$('resultNotice').className='notice warn';$('resultNotice').textContent='예상총점은 계산되지만 학기말 성취도 기준을 산출하려면 분할점수 입력 상태를 확인해 주세요.';}else{$('resultNotice').className='notice ok';$('resultNotice').textContent=`${result.rows.length}명의 학기말 예상총점과 성취도 분포를 계산했습니다.${result.config.useI?' I는 E/I 기준 미만을 예상 표시한 값입니다.':''}`;}renderSummary(result.rows,result.config);renderMissing(result.missing);renderSensitivity(result,result.config);renderSemesterPlanner(result.rows,result.config);}
 
 // ── CSV ───────────────────────────────────────────────────────────────
 function exportCSV(){
-  if(!state.rows.length)return alert('내보낼 계산 결과가 없습니다.');if(!confirm('CSV 파일에는 학생 성적 정보가 포함됩니다. 학교의 개인정보 보호 기준에 따라 관리하시겠습니까?'))return;const perf1Status=state.modes.perf1==='actual'?'실제':'1차 지필 기반 예상',perf2Status=state.modes.perf2==='actual'?'실제':'1차 지필 기반 예상',exam2Method=state.modes.exam2==='linear'?'1차 지필 기반 개별 선형 매핑':'1차 지필 기반 일괄 보정',header=['석차','성취도','반','번호','1차 지필','1차 수행','1차 수행 자료상태','2차 수행','2차 수행 자료상태','2차 지필 예상','2차 지필 예상방식','학기말 예상총점'],body=state.rows.map(r=>[r.rank,r.grade,r.classNo,r.number,r.exam1,r.perf1,perf1Status,r.perf2,perf2Status,r.exam2,exam2Method,r.total]),csv=[header,...body].map(row=>row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n'),blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='학기말_성취도_예측_V2.0.1.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  if(!state.rows.length)return alert('내보낼 계산 결과가 없습니다.');if(!confirm('CSV 파일에는 학생 성적 정보가 포함됩니다. 학교의 개인정보 보호 기준에 따라 관리하시겠습니까?'))return;const perf1Status=state.modes.perf1==='actual'?'실제':'1차 지필 기반 예상',perf2Status=state.modes.perf2==='actual'?'실제':'1차 지필 기반 예상',exam2Method=state.modes.exam2==='linear'?'1차 지필 기반 개별 선형 매핑':'1차 지필 기반 일괄 보정',header=['석차','성취도','반','번호','1차 지필','1차 수행','1차 수행 자료상태','2차 수행','2차 수행 자료상태','2차 지필 예상','2차 지필 예상방식','학기말 예상총점','참고 성취도'],body=state.rows.map(r=>[r.rank,r.grade,r.classNo,r.number,r.exam1,r.perf1,perf1Status,r.perf2,perf2Status,r.exam2,exam2Method,r.total,r.referenceGrade]),csv=[header,...body].map(row=>row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n'),blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='학기말_성취도_예측_V2.1.0.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 // ── 상호작용/초기화 ───────────────────────────────────────────────────
 function switchMode(component,mode){state.modes[component]=mode;document.querySelectorAll(`.mode-switch[data-component="${component}"] button`).forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===mode));if(component==='perf1'||component==='perf2'){$(component+'Actual').classList.toggle('hidden',mode!=='actual');$(component+'Estimate').classList.toggle('hidden',mode!=='estimate');}else{$('exam2Offset').classList.toggle('hidden',mode!=='offset');$('exam2Linear').classList.toggle('hidden',mode!=='linear');}calculateAndRender();}
 function renderCutEditor(){const exam=activeCutExam();$('cutMethod').querySelectorAll('button').forEach(btn=>btn.classList.toggle('active',btn.dataset.cutMethod===exam.method));$('simpleMethod').classList.toggle('hidden',exam.method!=='simple');$('ebelMethod').classList.toggle('hidden',exam.method!=='ebel');renderSimplePointRows();renderItemRows();renderRateTable();calculateCutResults();$('reverseResult').innerHTML=exam.candidates.length?'역산 조건이 변경되었을 수 있습니다. 후보 찾기를 다시 실행해 주세요.':'';}
-function applyIMode(include){state.includeI=include;document.querySelectorAll('#iModeSwitch button').forEach(btn=>btn.classList.toggle('active',(btn.dataset.iMode==='on')===include));document.querySelectorAll('[data-i-default]').forEach(input=>{input.disabled=!include;if(include){if(input.value==='')input.value=input.dataset.iDefault??'';input.placeholder='';}else{input.value='';input.placeholder='미선택';}});const e2=$('acExam2E');if(e2){e2.disabled=!include;if(!include){e2.value='';e2.placeholder='미선택';}}$('reverseE').disabled=!include;if(!include){$('reverseE').value='';$('reverseE').placeholder='미선택';activeCutExam().rates.E=Object.fromEntries(CATEGORIES.map(c=>[c.key,null]));}else{if(!$('reverseE').value)$('reverseE').value='20';$('reverseE').placeholder='';}invalidateInverse();renderRateTable();calculateCutResults();calculateAndRender();}
-function resetAll(){if(!confirm('입력한 성적자료와 모든 설정을 초기값으로 되돌릴까요?'))return;document.querySelectorAll('input:not([type="file"]),textarea').forEach(control=>{control.value=control.defaultValue;});document.querySelectorAll('input[type="file"]').forEach(control=>{control.value='';});document.querySelectorAll('select').forEach(select=>{const index=[...select.options].findIndex(option=>option.defaultSelected);select.selectedIndex=index>=0?index:0;});state.modes={perf1:'actual',perf2:'actual',exam2:'offset'};state.includeI=false;state.cutExam=newCutExam();state.boundary='AB';state.rows=[];state.missing=[];state.itemCuts={A:null,B:null,C:null,D:null,E:null};document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.panel==='semesterPanel'));document.querySelectorAll('.panel').forEach(panel=>panel.classList.toggle('active',panel.id==='semesterPanel'));renderCutEditor();switchMode('perf1','actual');switchMode('perf2','actual');switchMode('exam2','offset');updateDeltaMeaning();applyIMode(false);}
+function applyIMode(include){if (state.includeI !== include) changePlannerLevels(include);state.includeI=include;
+  $('semesterNeisGoalEWrap').hidden=!include;
+  $('semesterNeisGoalE').disabled=!include;
+  if(!include) $('semesterNeisGoalE').value='';
+  invalidateSemesterNeis();syncSemesterNeisMax();
+  document.querySelectorAll('#iModeSwitch button').forEach(btn=>btn.classList.toggle('active',(btn.dataset.iMode==='on')===include));document.querySelectorAll('[data-i-default]').forEach(input=>{input.disabled=!include;if(include){if(input.value==='')input.value=input.dataset.iDefault??'';input.placeholder='';}else{input.value='';input.placeholder='미선택';}});const e2=$('acExam2E');if(e2){e2.disabled=!include;if(!include){e2.value='';e2.placeholder='미선택';}}$('reverseE').disabled=!include;if(!include){$('reverseE').value='';$('reverseE').placeholder='미선택';activeCutExam().rates.E=Object.fromEntries(CATEGORIES.map(c=>[c.key,null]));}else{if(!$('reverseE').value)$('reverseE').value='20';$('reverseE').placeholder='';}invalidateInverse();renderRateTable();calculateCutResults();calculateAndRender();}
+function resetAll(){if(!confirm('입력한 성적자료와 모든 설정을 초기값으로 되돌릴까요?'))return;resetSemesterPlanning();document.querySelectorAll('input:not([type="file"]),textarea').forEach(control=>{control.value=control.defaultValue;});document.querySelectorAll('input[type="file"]').forEach(control=>{control.value='';});document.querySelectorAll('select').forEach(select=>{const index=[...select.options].findIndex(option=>option.defaultSelected);select.selectedIndex=index>=0?index:0;});state.modes={perf1:'actual',perf2:'actual',exam2:'offset'};state.includeI=false;state.cutExam=newCutExam();state.boundary='AB';state.rows=[];state.missing=[];state.itemCuts={A:null,B:null,C:null,D:null,E:null};document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.panel==='semesterPanel'));document.querySelectorAll('.panel').forEach(panel=>panel.classList.toggle('active',panel.id==='semesterPanel'));renderCutEditor();switchMode('perf1','actual');switchMode('perf2','actual');switchMode('exam2','offset');updateDeltaMeaning();applyIMode(false);}
 function updateDeltaMeaning(){const delta=clamp(toNum($('exam2Delta').value)??0,-30,30);$('exam2Delta').value=delta;$('exam2DeltaRange').value=delta;const meaning=delta>0?`+${delta}점: 모든 학생의 1차 지필 점수에 같은 보정값을 더합니다.`:delta<0?`${delta}점: 모든 학생의 1차 지필 점수에서 같은 보정값을 뺍니다.`:'0점: 1차 지필 점수를 그대로 2차 지필 예상점수로 사용합니다.';$('deltaMeaning').textContent=meaning;}
 const scheduleCalculate=debounce(calculateAndRender,350);
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.panel').forEach(panel=>panel.classList.toggle('active',panel.id===btn.dataset.panel));}));
@@ -454,7 +994,7 @@ $('calculateBtn').addEventListener('click',calculateAndRender);$('exportBtn').ad
 $('addItemBtn').addEventListener('click',()=>{const exam=activeCutExam();if(exam.items.length>=50)return;exam.items.push({number:exam.items.length+1,point:1,type:'choice',difficulty:'normal'});invalidateInverse();renderItemRows();renderRateTable();calculateCutResults();});$('removeItemBtn').addEventListener('click',()=>{const exam=activeCutExam();if(exam.items.length>1)exam.items.pop();invalidateInverse();renderItemRows();renderRateTable();calculateCutResults();});
 $('cutMethod').querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{activeCutExam().method=btn.dataset.cutMethod;invalidateInverse();$('cutMethod').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===btn));$('simpleMethod').classList.toggle('hidden',btn.dataset.cutMethod!=='simple');$('ebelMethod').classList.toggle('hidden',btn.dataset.cutMethod!=='ebel');renderRateTable();calculateCutResults();}));
 $('cutAssessmentMax').addEventListener('input',()=>{invalidateInverse();calculateCutResults();});LEVELS.forEach(level=>$('reverse'+level).addEventListener('input',invalidateInverse));$('reverseBtn').addEventListener('click',runReverse);
-renderCutEditor();updateDeltaMeaning();applyIMode(false);
+initializeSemesterPlanning();renderCutEditor();updateDeltaMeaning();applyIMode(false);
 </script>
 </body>
 </html>
